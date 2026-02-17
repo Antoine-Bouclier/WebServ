@@ -3,6 +3,7 @@
 
 #include "WebServ.hpp"
 #include "ConfigServer.hpp"
+#include "ConfigParser.hpp"
 
 class ConfigFile
 {

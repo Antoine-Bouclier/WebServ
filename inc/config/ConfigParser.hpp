@@ -2,15 +2,19 @@
 #define CONFIGPARSER_HPP
 
 #include "WebServ.hpp"
+#include "ConfigFile.hpp"
+
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 #include <exception>
 
 class ConfigParser
 {
 	private:
-		
+		std::string	readFile(const std::string &path);
 	public:
-		ConfigParser();
-		~ConfigParser();
+		static ConfigFile	parseConfig(const std::string &path);
 
 	public:
 	class ErrorException : public std::exception
