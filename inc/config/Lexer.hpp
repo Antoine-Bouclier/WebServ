@@ -9,6 +9,7 @@ class Lexer
 		std::vector<Token>	_tokens;
 
 		TokenType	GetTokenType(char c);
+		bool	isSpecial(char c);
 	public:
 		/* -- Constructors -- */
 		Lexer();
