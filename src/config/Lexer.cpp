@@ -55,6 +55,18 @@ std::vector<Token>	Lexer::Tokenize(const std::string &path)
 	Token	current_token;
 	for (unsigned long i = 0; i < path.size(); i++)
 	{
+		if (path[i] == '#')
+		{
+			if (!current_token.value.empty())
+			{
+				current_token.type = TOKEN_WORD;
+				_tokens.push_back(current_token);
+				current_token.value.erase(current_token.value.begin(), current_token.value.end());
+			}
+			while (i < path.size() && path[i] != '\n')
+				i++;
+			continue ;
+		}
 		if (isSpecial(path[i]) || isspace(path[i]))
 		{
 			if (!current_token.value.empty())

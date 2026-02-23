@@ -10,6 +10,7 @@ class Lexer
 
 		TokenType	GetTokenType(char c);
 		bool	isSpecial(char c);
+		void	pushAndErase(Token	current_token);
 	public:
 		/* -- Constructors -- */
 		Lexer();

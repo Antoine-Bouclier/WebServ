@@ -19,6 +19,6 @@ struct Token
 {
 	TokenType	type;
 	std::string	value;
-}
+};
 
 #endif
