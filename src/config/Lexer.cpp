@@ -6,11 +6,12 @@ Lexer::Lexer()
 }
 Lexer::Lexer(const Lexer& copy)
 {
-
+	(void)copy;
 }
 Lexer &Lexer::operator=(const Lexer& copy)
 {
-
+	(void)copy;
+	return (*this);
 }
 
 Lexer::~Lexer()
@@ -20,9 +21,10 @@ Lexer::~Lexer()
 
 void	Lexer::PrintToken()
 {
+	std::string	token[5] = {"WORD", "LBRACE", "RBRACE", "SEMICOLON", "EOF"};
 	for (std::vector<Token>::iterator it = _tokens.begin(); it != _tokens.end(); ++it)
 	{
-		std::cout << "Type: " << it->type << "	|	Value: " << it->value << '\n';
+		std::cout << "Type: " << token[it->type] << "	| Value: " << it->value << '\n';
 	}
 }
 
@@ -40,29 +42,37 @@ TokenType	Lexer::GetTokenType(char c)
 		return (TOKEN_WORD);
 }
 
+bool	Lexer::isSpecial(char c)
+{
+	if (c == '{' || c ==  '}' || c ==  ';' || c ==  '\0')
+		return (true);
+	else
+		return (false);
+}
+
 std::vector<Token>	Lexer::Tokenize(const std::string &path)
 {
-	Token	token;
+	Token	current_token;
 	for (unsigned long i = 0; i < path.size(); i++)
 	{
-		token.type = GetTokenType(path[i]);
-		if ((isspace(path[i]) && token.value.size() != 0) || token.type != TOKEN_WORD)
+		if (isSpecial(path[i]) || isspace(path[i]))
 		{
-			_tokens.push_back(token);
-			token.value.erase(token.value.begin(), token.value.end());
+			if (!current_token.value.empty())
+			{
+				current_token.type = TOKEN_WORD;
+				_tokens.push_back(current_token);
+				current_token.value.erase(current_token.value.begin(), current_token.value.end());
+			}
+			if (isSpecial(path[i]))
+			{
+				current_token.type = GetTokenType(path[i]);
+				current_token.value.push_back(path[i]);
+				_tokens.push_back(current_token);
+				current_token.value.erase(current_token.value.begin(), current_token.value.end());
+			}
 		}
-		if (!isspace(path[i]))
-			token.value.push_back(path[i]);
-		if (token.value.size() == 1 && token.type != TOKEN_WORD)
-		{
-			_tokens.push_back(token);
-			token.value.erase(token.value.begin(), token.value.end());
-		}
-	}
-	if (token.value.size() != 0)
-	{
-		_tokens.push_back(token);
-		token.value.erase(token.value.begin(), token.value.end());
+		else
+			current_token.value.push_back(path[i]);
 	}
 	return (_tokens);
 }
