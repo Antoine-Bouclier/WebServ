@@ -3,8 +3,10 @@
 
 #include <iostream>
 #include <vector>
+#include <cstring> // strerror()
 
 #include <sys/types.h>
+#include <sys/stat.h> // stat()
 
 enum TokenType
 {

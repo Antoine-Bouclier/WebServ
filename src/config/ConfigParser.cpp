@@ -1,4 +1,4 @@
-#include "ConfigParser.hpp"
+#include "config/ConfigParser.hpp"
 
 std::string	ConfigParser::readFile(const char* path)
 {
