@@ -13,9 +13,12 @@ class ConfigParser
 {
 	private:
 		std::string	_path;
-		Lexer	_lexer;
+		Lexer		_lexer;
+
+		void		checkExt();
 		std::string	readFile(const char* path);
 	public:
+		/* Main function */
 		void	parseConfig(const char* path);
 
 	public:
