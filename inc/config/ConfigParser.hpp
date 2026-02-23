@@ -2,7 +2,7 @@
 #define CONFIGPARSER_HPP
 
 #include "WebServ.hpp"
-#include "ConfigFile.hpp"
+#include "Lexer.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -12,9 +12,11 @@
 class ConfigParser
 {
 	private:
-		std::string	readFile(const std::string &path);
+		std::string	_path;
+		Lexer	_lexer;
+		std::string	readFile(const char* path);
 	public:
-		static ConfigFile	parseConfig(const std::string &path);
+		void	parseConfig(const char* path);
 
 	public:
 	class ErrorException : public std::exception
@@ -22,7 +24,7 @@ class ConfigParser
 		private:
 			std::string	_message;
 		public:
-			ErrorException(std::string message) throw();
+			ErrorException(std::string const& message);
 			virtual const char* what() const throw();
 			virtual ~ErrorException() throw();
 	};
