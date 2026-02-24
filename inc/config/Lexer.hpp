@@ -8,9 +8,8 @@ class Lexer
 	private:
 		std::vector<Token>	_tokens;
 
-		TokenType	GetTokenType(char c);
+		TokenType	getTokenType(char c);
 		bool	isSpecial(char c);
-		void	pushAndErase(Token	current_token);
 	public:
 		/* -- Constructors -- */
 		Lexer();
@@ -19,10 +18,10 @@ class Lexer
 		~Lexer();
 
 		/* -- DEBUG -- */
-		void				PrintToken();
+		void				printToken();
 
 		/* -- Member function -- */
-		std::vector<Token>	Tokenize(const std::string &path);
+		std::vector<Token>	tokenize(const std::string &path);
 };
 
 #endif

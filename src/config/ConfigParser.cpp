@@ -36,12 +36,90 @@ void	ConfigParser::checkExt()
 	}
 }
 
+void		ConfigParser::handleListen(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void		ConfigParser::handleName(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void		ConfigParser::handleRoot(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void		ConfigParser::handleIndex(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void		ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void		ConfigParser::handleLocation(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void		ConfigParser::handleClientMax(std::vector<Token>::iterator &it, ConfigServer &server)
+{
+
+}
+
+void	ConfigParser::parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end)
+{
+	ConfigServer	new_server;
+	std::string		directives[7] = {
+						"listen", "server_name", "root", "client_max_body_size", "error_page", "location", "index"};
+	void			(ConfigParser::*ptr[])(std::vector<Token>::iterator&, ConfigServer&) = {
+						&ConfigParser::handleListen, &ConfigParser::handleName, &ConfigParser::handleRoot, &ConfigParser::handleClientMax,
+						&ConfigParser::handleErrorPage, &ConfigParser::handleLocation, &ConfigParser::handleIndex};
+
+	++it;
+	if (it == end || it->type != TOKEN_LBRACE)
+		throw	ConfigParser::ErrorException("Missing left brace.");
+	++it;
+
+	while (it != end && it->type != TOKEN_RBRACE)
+	{
+		for (int i = 0; i < 7; i++)
+		{
+			bool	found = false;
+			if (it->value == directives[i])
+			{
+				(this->*ptr[i])(it, new_server);
+				found = true;
+				break ;
+			}
+			if (!found)
+				throw	ConfigParser::ErrorException("Unknown directive: " + it->value);
+			++it;
+		}
+	}
+	if (it == end)
+		throw	ConfigParser::ErrorException("Missing right brace for server block.");
+	_server.push_back(new_server);
+}
+
 void	ConfigParser::parseConfig(const char* path)
 {
+	std::vector<Token>	tokens;
+
 	_path = path;
 	checkExt();
-	_lexer.Tokenize(readFile(path));
-	_lexer.PrintToken(); //! DEBUG
+	tokens = _lexer.tokenize(readFile(path));
+	for (std::vector<Token>::iterator it = tokens.begin(); it != tokens.end(); ++it)
+	{
+		if (it->value.compare("server") != 0)
+			throw	ConfigParser::ErrorException("Only server blocks are allowed in the main context.");
+		else
+			parseServer(it, tokens.end());
+	}
 }
 
 ConfigParser::ErrorException::ErrorException(std::string const& message) : _message("CONFIG ERROR: " + message) {}

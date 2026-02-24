@@ -19,7 +19,7 @@ Lexer::~Lexer()
 
 }
 
-void	Lexer::PrintToken()
+void	Lexer::printToken()
 {
 	std::string	token[5] = {"WORD", "LBRACE", "RBRACE", "SEMICOLON", "EOF"};
 	for (std::vector<Token>::iterator it = _tokens.begin(); it != _tokens.end(); ++it)
@@ -28,7 +28,7 @@ void	Lexer::PrintToken()
 	}
 }
 
-TokenType	Lexer::GetTokenType(char c)
+TokenType	Lexer::getTokenType(char c)
 {
 	if (c == '{')
 		return (TOKEN_LBRACE);
@@ -50,7 +50,7 @@ bool	Lexer::isSpecial(char c)
 		return (false);
 }
 
-std::vector<Token>	Lexer::Tokenize(const std::string &path)
+std::vector<Token>	Lexer::tokenize(const std::string &path)
 {
 	Token	current_token;
 	for (unsigned long i = 0; i < path.size(); i++)
@@ -77,7 +77,7 @@ std::vector<Token>	Lexer::Tokenize(const std::string &path)
 			}
 			if (isSpecial(path[i]))
 			{
-				current_token.type = GetTokenType(path[i]);
+				current_token.type = getTokenType(path[i]);
 				current_token.value.push_back(path[i]);
 				_tokens.push_back(current_token);
 				current_token.value.erase(current_token.value.begin(), current_token.value.end());

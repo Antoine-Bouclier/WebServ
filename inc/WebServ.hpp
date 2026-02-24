@@ -3,10 +3,17 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 #include <cstring> // strerror()
 
 #include <sys/types.h>
 #include <sys/stat.h> // stat()
+
+enum Context {
+    MAIN_CONTEXT,
+    SERVER_CONTEXT,
+    LOCATION_CONTEXT
+};
 
 enum TokenType
 {
