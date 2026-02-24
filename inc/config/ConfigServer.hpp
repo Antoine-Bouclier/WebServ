@@ -3,29 +3,30 @@
 
 #include "WebServ.hpp"
 #include "ConfigLocation.hpp"
+#include "AConfig.hpp"
 
-class ConfigServer
+class ConfigServer : public AConfig
 {
 	private:
 		uint16_t					_port;
 		std::string					_host;
 		std::string					_server_name;
-		std::string					_root;
-		std::string					_index;
-		std::map<int, std::string>	_error_pages;
-		unsigned long				_client_max_body_size;
-		std::vector<ConfigLocation>	_location;
+		std::vector<ConfigLocation>	_locations;
 	public:
 		ConfigServer();
 		~ConfigServer();
 
-		/* Setter */
-		uint16_t	setPort() const;
-		std::string	setHost() const;
-		std::string	setServerName() const;
-		std::string	setRoot() const;
-		std::string	setIndex() const;
-		void	parseServer();
+		/* -- Setter -- */
+		void	setPort(uint16_t port);
+		void	setHost(const std::string& host);
+        void	addServerName(const std::string& name);
+        void	addLocation(const ConfigLocation& loc);
+
+        /* -- Getters -- */
+        int							getPort() const;
+        std::string					getHost() const;
+        std::vector<std::string>	getServerNames() const;
+        std::vector<ConfigLocation>	getLocations() const;
 };
 
 
