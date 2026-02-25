@@ -19,7 +19,7 @@ class ConfigLocation : public AConfig
 		~ConfigLocation();
 
 		/* -- Setters -- */
-		void	setAutoindex(bool value);
+		void	setAutoindex(bool autoindex);
 		void	setPath(const std::string& path);
 		void	setUploadPath(const std::string& path);
 		void	addMethod(const std::string& method);

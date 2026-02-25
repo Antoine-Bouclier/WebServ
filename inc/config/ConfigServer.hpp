@@ -10,7 +10,7 @@ class ConfigServer : public AConfig
 	private:
 		uint16_t					_port;
 		std::string					_host;
-		std::string					_server_name;
+		std::vector<std::string>	_server_names;
 		std::vector<ConfigLocation>	_locations;
 	public:
 		ConfigServer();
@@ -19,14 +19,14 @@ class ConfigServer : public AConfig
 		/* -- Setter -- */
 		void	setPort(uint16_t port);
 		void	setHost(const std::string& host);
-        void	addServerName(const std::string& name);
-        void	addLocation(const ConfigLocation& loc);
+		void	addServerName(const std::string& name);
+		void	addLocation(const ConfigLocation& loc);
 
-        /* -- Getters -- */
-        int							getPort() const;
-        std::string					getHost() const;
-        std::vector<std::string>	getServerNames() const;
-        std::vector<ConfigLocation>	getLocations() const;
+		/* -- Getters -- */
+		uint16_t							getPort() const;
+		std::string							getHost() const;
+		const std::vector<std::string>&		getServerNames() const;
+		const std::vector<ConfigLocation>&	getLocations() const;
 };
 
 
