@@ -2,6 +2,7 @@
 
 ConfigServer::ConfigServer()
 {}
+
 ConfigServer::~ConfigServer()
 {}
 
@@ -9,7 +10,16 @@ ConfigServer::~ConfigServer()
 void	ConfigServer::setPort(uint16_t port)					{ _port = port; }
 void	ConfigServer::setHost(const std::string& host)			{ _host = host; }
 void	ConfigServer::addServerName(const std::string& name)	{ _server_names.push_back(name); }
-void	ConfigServer::addLocation(const ConfigLocation& loc)	{ _locations.push_back(loc); }
+
+void	ConfigServer::addLocation(const ConfigLocation& loc)
+{
+	for (size_t i = 0; i < _locations.size(); i++)
+	{
+		if (_locations[i].getPath() == loc.getPath())
+			throw ErrorException("Duplicate location path: " + loc.getPath());
+	}
+	_locations.push_back(loc);
+}
 
 
 /* -- Getters -- */

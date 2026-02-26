@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/stat.h> // stat()
 
+#include <Exception.hpp>
+
 enum Context {
     MAIN_CONTEXT,
     SERVER_CONTEXT,
