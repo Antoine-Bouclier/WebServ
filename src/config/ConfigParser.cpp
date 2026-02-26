@@ -36,39 +36,71 @@ void	ConfigParser::checkExt()
 	}
 }
 
-void		ConfigParser::handleListen(std::vector<Token>::iterator &it, ConfigServer &server)
+void		ConfigParser::handleListen(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
 {
 
 }
 
-void		ConfigParser::handleName(std::vector<Token>::iterator &it, ConfigServer &server)
+void		ConfigParser::handleName(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
 {
 
 }
 
-void		ConfigParser::handleRoot(std::vector<Token>::iterator &it, ConfigServer &server)
+void		ConfigParser::handleRoot(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
 {
 
 }
 
-void		ConfigParser::handleIndex(std::vector<Token>::iterator &it, ConfigServer &server)
+void		ConfigParser::handleIndex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
 {
 
 }
 
-void		ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, ConfigServer &server)
+void		ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
 {
 
 }
 
-void		ConfigParser::handleLocation(std::vector<Token>::iterator &it, ConfigServer &server)
+void		ConfigParser::handleLocation(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
+{
+	ConfigLocation	new_location;
+	std::string		directives[6] = {
+		"root", "allowed_methods", "autoindex", "upload_path", "cgi_extension", "cgi_path"};
+
+	++it;
+	if (it->type != TOKEN_LBRACE || it == end)
+		throw	ConfigParser::ErrorException("Missing left brace for 'location'");
+	++it;
+
+	while (it != end && it->type != TOKEN_RBRACE)
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			bool	found = false;
+			if (it->value == directives[i])
+			{
+				(this->*ptr[i])(it, end, new_location);
+				found = true;
+				break ;
+			}
+			if (!found)
+				throw	ConfigParser::ErrorException("Unknown directive: " + it->value);
+			++it;
+		}
+	}
+	if (it == end)
+		throw	ConfigParser::ErrorException("Missing right brace for server block.");
+	_server.push_back(new_location);	
+}
+
+void		ConfigParser::handleClientMax(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server)
 {
 
 }
 
-void		ConfigParser::handleClientMax(std::vector<Token>::iterator &it, ConfigServer &server)
+void	ConfigParser::parseBlock()
 {
-
+	
 }
 
 void	ConfigParser::parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end)
@@ -76,7 +108,7 @@ void	ConfigParser::parseServer(std::vector<Token>::iterator &it, std::vector<Tok
 	ConfigServer	new_server;
 	std::string		directives[7] = {
 						"listen", "server_name", "root", "client_max_body_size", "error_page", "location", "index"};
-	void			(ConfigParser::*ptr[])(std::vector<Token>::iterator&, ConfigServer&) = {
+	void			(ConfigParser::*ptr[])(std::vector<Token>::iterator&, std::vector<Token>::iterator, ConfigServer&) = {
 						&ConfigParser::handleListen, &ConfigParser::handleName, &ConfigParser::handleRoot, &ConfigParser::handleClientMax,
 						&ConfigParser::handleErrorPage, &ConfigParser::handleLocation, &ConfigParser::handleIndex};
 
@@ -92,7 +124,7 @@ void	ConfigParser::parseServer(std::vector<Token>::iterator &it, std::vector<Tok
 			bool	found = false;
 			if (it->value == directives[i])
 			{
-				(this->*ptr[i])(it, new_server);
+				(this->*ptr[i])(it, end, new_server);
 				found = true;
 				break ;
 			}

@@ -2,12 +2,19 @@
 
 ConfigLocation::ConfigLocation() : _autoindex(false)
 {
-
+	_methods.push_back("GET");
+	_methods.push_back("POST");
+	_methods.push_back("DELETE");
 }
 
 ConfigLocation::~ConfigLocation()
 {
 
+}
+
+void	ConfigLocation::clearMethods()
+{
+	_methods.erase(_methods.begin(), _methods.end());
 }
 
 /* -- Setters -- */

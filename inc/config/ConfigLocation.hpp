@@ -14,9 +14,12 @@ class ConfigLocation : public AConfig
 		std::vector<std::string>	_methods;
 
 		std::map<std::string, std::string>	_cgi;
+
 	public:
 		ConfigLocation();
 		~ConfigLocation();
+
+		void	clearMethods();
 
 		/* -- Setters -- */
 		void	setAutoindex(bool autoindex);

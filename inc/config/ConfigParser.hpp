@@ -21,14 +21,12 @@ class ConfigParser
 		std::string	readFile(const char* path);
 		void		parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end);
 		
-		/* Handle functions */
-		void		handleListen(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
-		void		handleName(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
-		void		handleRoot(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
-		void		handleIndex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
-		void		handleErrorPage(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
-		void		handleLocation(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
-		void		handleClientMax(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, ConfigServer &server);
+		
+		/* -- Handlers -- */
+		void	handleAutoindex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handlePath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handleUploadPath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handleMethods(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 	public:
 		/* Main function */
 		void	parseConfig(const char* path);
