@@ -25,7 +25,7 @@ class AConfig
 		std::string					getRoot() const;
 		std::vector<std::string>	getIndex() const;
 		size_t						getClientMaxBody() const;
-		std::map<int, std::string>	getErrorPage()const ;
+		std::map<int, std::string>	getErrorPage()const;
 };
 
 

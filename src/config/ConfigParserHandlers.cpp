@@ -95,3 +95,69 @@ void	ConfigParser::handleCgi(std::vector<Token>::iterator &it, std::vector<Token
 	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
 	loc.addCgi(extension, binary_path);
 }
+
+/* -- Handlers server -- */
+void	ConfigParser::handleListen(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+{
+	++it;
+
+	if (it == end || it->type != TOKEN_WORD)
+		throw ErrorException("listen directive requires a Host");
+
+	std::string	host;
+	std::string	port_str;
+	size_t	found = it->value.find(':');
+	if (found != std::string::npos)
+	{
+		host = it->value.substr(0, found);
+		port_str = it->value.substr(found + 1);
+	}
+	else
+	{
+		host = "0.0.0.0";
+		port_str = "8080";
+	}
+
+	++it;
+	if (it ==end || it->type != TOKEN_SEMICOLON)
+		throw ErrorException("Missing semicolon ';' after listen directive");
+
+	if (port_str.empty() || port_str.find_first_not_of("0123456789") != std::string::npos)
+		throw ErrorException("Invalid port: " + port_str);
+	long	port = std::atol(port_str.c_str());
+	if (port < 1 || port > 65535)
+		throw ErrorException("Port out of range: " + port_str);
+
+	ConfigServer& server = static_cast<ConfigServer&>(config);
+	server.setHost(host);
+	server.setPort(static_cast<uint16_t>(port));
+}
+
+void	ConfigParser::handleServerNames(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+{
+	++it;
+	ConfigServer& server = static_cast<ConfigServer&>(config);
+
+	if (it == end || it->type == TOKEN_SEMICOLON)
+		throw ErrorException("server_name directive requires at least one value");
+	while (it != end && it->type == TOKEN_WORD)
+	{
+		server.addServerName(it->value);
+		++it;
+	}
+	if (it == end || it->type != TOKEN_SEMICOLON)
+		throw ErrorException("Missing semicolon ';' after server_name directive");
+}
+
+void	ConfigParser::handleLocation(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+{
+	++it;
+	ConfigServer& server = static_cast<ConfigServer&>(config);
+	ConfigLocation	new_loc;
+
+	if (it == end || it->type != TOKEN_WORD)
+		throw ErrorException("Location requires a path.");
+	if (it->value[0] != '/')
+		throw ErrorException("Location prefix must start with '/'");
+	server.addLocation(new_loc);
+}

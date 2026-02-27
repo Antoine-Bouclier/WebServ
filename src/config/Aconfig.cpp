@@ -1,10 +1,44 @@
 #include "AConfig.hpp"
 
-AConfig::ErrorException::ErrorException(std::string const& message) : _message("CONFIG ERROR: " + message) {}
-
-AConfig::ErrorException::~ErrorException() throw() {}
-
-const char* AConfig::ErrorException::what() const throw()
+/* -- Setters -- */
+void	AConfig::setRoot(const std::string& root)
 {
-    return _message.c_str();
+
+}
+
+void	AConfig::setClientMaxBody(size_t size)
+{
+
+}
+
+void	AConfig::addErrorPage(const int code, const std::string& path)
+{
+
+}
+
+void	AConfig::addIndex(const std::string& one_index)
+{
+
+}
+
+
+/* -- Getters -- */
+std::string					AConfig::getRoot() const
+{
+
+}
+
+std::vector<std::string>	AConfig::getIndex() const
+{
+
+}
+
+size_t						AConfig::getClientMaxBody() const
+{
+
+}
+
+std::map<int, std::string>	AConfig::getErrorPage()const
+{
+
 }

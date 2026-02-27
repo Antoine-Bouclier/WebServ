@@ -21,12 +21,17 @@ class ConfigParser
 		std::string	readFile(const char* path);
 		void		parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end);
 		
-		/* -- Handlers -- */
+		/* -- Handlers location -- */
 		void	handleAutoindex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 		void	handlePath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 		void	handleUploadPath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 		void	handleMethods(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 		void	handleCgi(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+
+		/* -- Handlers server -- */
+		void	handleListen(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handleServerNames(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handleLocation(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 	public:
 		/* Main function */
 		void	parseConfig(const char* path);

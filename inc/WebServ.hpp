@@ -2,8 +2,9 @@
 #define WEBSERV_HPP
 
 #include <iostream>
-#include <vector>
-#include <map>
+#include <utility> // std::pair
+#include <vector> // std::vector
+#include <map> // std::map
 #include <cstring> // strerror()
 
 #include <sys/types.h>

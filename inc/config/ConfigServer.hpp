@@ -10,6 +10,7 @@ class ConfigServer : public AConfig
 	private:
 		uint16_t					_port;
 		std::string					_host;
+		std::pair<int, std::string>	_redirection;
 		std::vector<std::string>	_server_names;
 		std::vector<ConfigLocation>	_locations;
 	public:
