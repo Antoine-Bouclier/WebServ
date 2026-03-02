@@ -20,6 +20,11 @@ class ConfigParser
 		void		checkExt();
 		std::string	readFile(const char* path);
 		void		parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end);
+
+		/* -- Handlers AConfig -- */
+		void	handleIndex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handleClientMax(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void	handleErrorPage(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
 		
 		/* -- Handlers location -- */
 		void	handleAutoindex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);

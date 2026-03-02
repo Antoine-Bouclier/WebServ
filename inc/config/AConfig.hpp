@@ -22,10 +22,10 @@ class AConfig
 		void	addIndex(const std::string& one_index);
 
 		/* -- Getters -- */
-		std::string					getRoot() const;
-		std::vector<std::string>	getIndex() const;
-		size_t						getClientMaxBody() const;
-		std::map<int, std::string>	getErrorPage()const;
+		const std::string&				getRoot() const;
+		const std::vector<std::string>&	getIndex() const;
+		const size_t						getClientMaxBody() const;
+		const std::map<int, std::string>&	getErrorPage()const;
 };
 
 
