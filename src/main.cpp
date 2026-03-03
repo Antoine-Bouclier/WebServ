@@ -1,14 +1,15 @@
 #include "WebServ.hpp"
-#include "ConfigFile.hpp"
+#include "config/ConfigParser.hpp"
 
 int	main(int argc, char **argv)
 {
-	if (argc == 2 || argc == 1)
+	if (argc == 2)
 	{
-		std::string	file_name = argc == 2 ? argv[1] : "default";
+		ConfigParser	parser;
+
 		try
 		{
-			ConfigFile	config(file_name);
+			parser.parseConfig(argv[1]);
 		}
 		catch(const std::exception& e)
 		{
