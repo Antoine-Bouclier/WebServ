@@ -179,16 +179,78 @@ void	ConfigParser::handleIndex(std::vector<Token>::iterator &it, std::vector<Tok
 void	ConfigParser::handleClientMax(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
 {
 	++it;
+	long	multiplier = 1;
 
 	if (it == end || it->type != TOKEN_WORD)
 		throw ErrorException("client_max_body_size directive require a value.");
-	if (it->value.rend() == )
+
+	std::string	value = it->value;
+	char		last_char = value.at(value.size() - 1);
+
+	if (!isdigit(last_char))
+	{
+		if (last_char == 'K' || last_char == 'k')
+			multiplier = 1024;
+		if (last_char == 'M' || last_char == 'm')
+			multiplier = 1024 * 1024;
+		if (last_char == 'G' || last_char == 'g')
+			multiplier = 1024 * 1024 * 1024;
+		else
+			throw ErrorException("Invalid unit: " + value);
+		value = value.substr(0, it->value.size() - 1);
+	}
+
+	if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos)
+		throw ErrorException("Invalid numeric value in client_max_body_size");
+
+	long		size = std::atol(value.c_str()) * multiplier;
+	config.setClientMaxBody(static_cast<size_t>(size));
+
 	++it;
 	if (it == end || it->type != TOKEN_SEMICOLON)
 		throw ErrorException("Too many arguments for client_max_body_size directive.");
 }
 
+bool	isNumber(const std::string& s)
+{
+	if (s.empty())
+		return (false);
+	for (std::string::const_iterator it = s.begin(); it != s.end(); ++it)
+	{
+		if (!isdigit(*it))
+			return (false);
+	}
+	return (true);
+}
+
 void	ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
 {
+	++it;
+	std::vector<int>	codes;
 
+	while (it != end && it->type == TOKEN_WORD && isNumber(it->value))
+	{
+		int code = std::atoi(it->value.c_str());
+		if (code < 300 || code > 599)
+			throw ErrorException("Invalid error code: " + it->value);
+		codes.push_back(code);
+		++it;
+	}
+
+	if (it == end || it->type != TOKEN_WORD)
+		throw ErrorException("Missing argument in error_page directive.");
+
+	std::string	path = it->value;
+
+	++it;
+	if (it == end || it->type != TOKEN_SEMICOLON)
+		throw ErrorException("Missing semicolon ';' after error_page directive.");
+
+	if (codes.empty())
+		throw ErrorException("error_page directive requires at least one code");
+
+	for (size_t i = 0; i < codes.size(); i++)
+	{
+		config.addErrorPage(codes[i],path);
+	}
 }
