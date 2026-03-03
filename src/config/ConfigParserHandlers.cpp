@@ -15,7 +15,7 @@ void	ConfigParser::handleAutoindex(std::vector<Token>::iterator &it, std::vector
 	else if (it->value == "off")
 		loc.setAutoindex(false);
 	else
-		throw ErrorException("Unknown value for autoindex: " + it->value + "Allowed value: (on/off).", it->line);
+		throw ErrorException("Unknown value for autoindex: " + it->value + " Allowed value: (on/off).", it->line);
 
 	++it;
 }
@@ -57,7 +57,7 @@ void	ConfigParser::handleMethods(std::vector<Token>::iterator &it, std::vector<T
 	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
 	loc.clearMethods();
 
-	while (it != end || it->type == TOKEN_SEMICOLON)
+	while (it != end && it->type != TOKEN_SEMICOLON)
 	{
 		if (it->type == TOKEN_WORD)
 		{
@@ -67,7 +67,7 @@ void	ConfigParser::handleMethods(std::vector<Token>::iterator &it, std::vector<T
 				throw ErrorException("Unknown method: " + it->value + ". Valid: [GET POST DELETE].", it->line);
 		}
 		else 
-			throw ErrorException("Unexpected token in allowed_methods.", it->line);
+			throw ErrorException("Unexpected token in allowed_methods." + it->value, it->line);
 		++it;
 	}
 	
@@ -166,6 +166,7 @@ void	ConfigParser::handleLocation(std::vector<Token>::iterator &it, std::vector<
 
 	if (it == end || it->type != TOKEN_LBRACE)
 		throw ErrorException("Expected '{' after location path.", it->line);
+	++it;
 	parseBlock(it, end, new_loc);
 	server.addLocation(new_loc);
 }
