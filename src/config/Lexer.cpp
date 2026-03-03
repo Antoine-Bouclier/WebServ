@@ -53,13 +53,29 @@ bool	Lexer::isSpecial(char c)
 std::vector<Token>	Lexer::tokenize(const std::string &path)
 {
 	Token	current_token;
+	unsigned int current_line = 1;
+
 	for (unsigned long i = 0; i < path.size(); i++)
 	{
+
+		if (path[i] == '\n')
+		{
+			if (!current_token.value.empty())
+			{
+				current_token.type = TOKEN_WORD;
+				current_token.line = current_line;
+				_tokens.push_back(current_token);
+				current_token.value.clear();
+			}
+			current_line++;
+			continue;
+		}
 		if (path[i] == '#')
 		{
 			if (!current_token.value.empty())
 			{
 				current_token.type = TOKEN_WORD;
+				current_token.line = current_line;
 				_tokens.push_back(current_token);
 				current_token.value.erase(current_token.value.begin(), current_token.value.end());
 			}
@@ -72,6 +88,7 @@ std::vector<Token>	Lexer::tokenize(const std::string &path)
 			if (!current_token.value.empty())
 			{
 				current_token.type = TOKEN_WORD;
+				current_token.line = current_line;
 				_tokens.push_back(current_token);
 				current_token.value.erase(current_token.value.begin(), current_token.value.end());
 			}
@@ -79,6 +96,7 @@ std::vector<Token>	Lexer::tokenize(const std::string &path)
 			{
 				current_token.type = getTokenType(path[i]);
 				current_token.value.push_back(path[i]);
+				current_token.line = current_line;
 				_tokens.push_back(current_token);
 				current_token.value.erase(current_token.value.begin(), current_token.value.end());
 			}

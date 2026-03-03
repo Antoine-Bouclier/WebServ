@@ -1,5 +1,14 @@
 #include "config/AConfig.hpp"
 
+AConfig::AConfig()
+{
+	
+}
+
+AConfig::~AConfig()
+{
+}
+
 /* -- Setters -- */
 void	AConfig::setRoot(const std::string& root) { _root = root; }
 void	AConfig::setClientMaxBody(size_t size) { _client_max_body_size = size; }

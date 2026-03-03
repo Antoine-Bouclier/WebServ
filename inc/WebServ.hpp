@@ -7,6 +7,7 @@
 #include <map> // std::map
 #include <cstring> // strerror()
 #include <cstdlib> // atoi, atol
+#include <sstream> // stringtream
 
 #include <sys/types.h>
 #include <sys/stat.h> // stat()
@@ -31,8 +32,9 @@ enum TokenType
 
 struct Token
 {
-	TokenType	type;
-	std::string	value;
+	TokenType		type;
+	std::string		value;
+	unsigned int	line;
 };
 
 #endif

@@ -71,13 +71,13 @@ void	ConfigParser::parseServer(std::vector<Token>::iterator &it, std::vector<Tok
 
 	++it;
 	if (it == end || it->type != TOKEN_LBRACE)
-		throw	ErrorException("Missing left brace.");
+		throw	ErrorException("Missing left brace.", it->line);
 	++it;
 
 	parseBlock(it, end, new_server);
 
 	if (it == end)
-		throw	ErrorException("Missing right brace for server block.");
+		throw	ErrorException("Missing right brace for server block.", it->line);
 	_server.push_back(new_server);
 }
 
@@ -91,7 +91,7 @@ void	ConfigParser::parseConfig(const char* path)
 	for (std::vector<Token>::iterator it = tokens.begin(); it != tokens.end(); ++it)
 	{
 		if (it->value.compare("server") != 0 && it->type == TOKEN_WORD)
-			throw	ErrorException("Only server blocks are allowed in the main context.");
+			throw	ErrorException("Only server blocks are allowed in the main context.", it->line);
 		else
 			parseServer(it, tokens.end());
 	}
@@ -108,10 +108,10 @@ void	ConfigParser::parseBlock(std::vector<Token>::iterator &it, std::vector<Toke
 			if (h != _handlers.end())
 				(this->*(h->second))(it, end, config);
 			else
-				throw ErrorException("Unknown directive: " + it->value);
+				throw ErrorException("Unknown directive: " + it->value, it->line);
 		}
 		else
-			throw ErrorException("Unexpected token in block.");
+			throw ErrorException("Unexpected token in block.", it->line);
 		++it;
 	}
 }
