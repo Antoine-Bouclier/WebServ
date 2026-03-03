@@ -24,10 +24,10 @@ void	ConfigParser::handlePath(std::vector<Token>::iterator &it, std::vector<Toke
 {
 	++it;
 	
-	if (it == end, it->type != TOKEN_WORD)
-	throw ErrorException("Path name required in location.");
+	if (it == end || it->type != TOKEN_WORD)
+		throw ErrorException("Path name required in location.");
 	if (it->value[0] != '/')
-	throw ErrorException("Missing '/' at the beginning of the path.");
+		throw ErrorException("Missing '/' at the beginning of the path.");
 	
 	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
 	loc.setPath(it->value);
@@ -159,8 +159,17 @@ void	ConfigParser::handleLocation(std::vector<Token>::iterator &it, std::vector<
 		throw ErrorException("Location requires a path.");
 	if (it->value[0] != '/')
 		throw ErrorException("Location prefix must start with '/'");
+
+	new_loc.setPath(it->value);
+
+	++it;
+
+	if (it == end || it->type != TOKEN_RBRACE)
+		throw ErrorException("Expected '{' after location path.");
+	parseBlock(it, end, new_loc);
 	server.addLocation(new_loc);
 }
+
 /* -- Handlers AConfig -- */
 void	ConfigParser::handleIndex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
 {
@@ -253,4 +262,19 @@ void	ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, std::vector
 	{
 		config.addErrorPage(codes[i],path);
 	}
+}
+
+void	ConfigParser::handleRoot(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+{
+	++it;
+
+	if (it == end || it->type != TOKEN_WORD)
+		throw ErrorException("root directive requires a path.");
+
+	config.setRoot(it->value);
+
+	++it;
+
+	if (it == end || it->type != TOKEN_SEMICOLON)
+		throw ErrorException("Missing semicolon ';' after root directive.");
 }

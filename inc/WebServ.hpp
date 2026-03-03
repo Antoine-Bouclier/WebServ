@@ -6,9 +6,11 @@
 #include <vector> // std::vector
 #include <map> // std::map
 #include <cstring> // strerror()
+#include <cstdlib> // atoi, atol
 
 #include <sys/types.h>
 #include <sys/stat.h> // stat()
+#include <stdint.h> // uint16_t
 
 #include <Exception.hpp>
 

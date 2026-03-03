@@ -1,19 +1,23 @@
-NAME        =   webserv
-CXX          =   c++
-CFLAGS      =   -Wall -Wextra -Werror -std=c++98 -MMD
+NAME		=	webserv
+CXX			=	c++
+CFLAGS		=	-Wall -Wextra -Werror -std=c++98 -MMD
 
-SRC_DIR     =   src/
-OBJ_DIR     =   obj/
-INC_DIR     =   inc/
+SRC_DIR		=	src/
+OBJ_DIR		=	obj/
+INC_DIR		=	inc/
 
-SRC_FILES   =   main.cpp \
-                config/ConfigParser.cpp \
-                config/Lexer.cpp
+SRC_FILES	=	main.cpp \
+				config/AConfig.cpp \
+				config/ConfigParser.cpp \
+				config/ConfigParserHandlers.cpp \
+				config/ConfigServer.cpp \
+				config/ConfigLocation.cpp \
+				config/Lexer.cpp
 
-OBJ         =   $(addprefix $(OBJ_DIR), $(SRC_FILES:.cpp=.o))
-DEP         =   $(OBJ:.o=.d)
+OBJ			=	$(addprefix $(OBJ_DIR), $(SRC_FILES:.cpp=.o))
+DEP			=	$(OBJ:.o=.d)
 
-INCLUDES    =   -I $(INC_DIR)
+INCLUDES	=	-I $(INC_DIR)
 
 all: $(NAME)
 

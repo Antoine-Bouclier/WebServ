@@ -1,4 +1,33 @@
 #include "config/ConfigParser.hpp"
+ConfigParser::ConfigParser()
+{
+	initHandlers();
+}
+
+ConfigParser::~ConfigParser()
+{
+
+}
+
+void	ConfigParser::initHandlers()
+{
+	/* -- Handlers AConfig -- */
+	_handlers["index"] = &ConfigParser::handleIndex;
+	_handlers["client_max_body_size"] = &ConfigParser::handleClientMax;
+	_handlers["error_page"] = &ConfigParser::handleErrorPage;
+	_handlers["root"] = &ConfigParser::handleRoot;
+		
+	/* -- Handlers location -- */
+	_handlers["autoindex"] = &ConfigParser::handleAutoindex;
+	_handlers["upload_path"] = &ConfigParser::handleUploadPath;
+	_handlers["allowed_methods"] = &ConfigParser::handleMethods;
+	_handlers["cgi"] = &ConfigParser::handleCgi;
+
+	/* -- Handlers server -- */
+	_handlers["listen"] = &ConfigParser::handleListen;
+	_handlers["server_name"] = &ConfigParser::handleServerNames;
+	_handlers["location"] = &ConfigParser::handleLocation;
+}
 
 std::string	ConfigParser::readFile(const char* path)
 {
@@ -39,33 +68,14 @@ void	ConfigParser::checkExt()
 void	ConfigParser::parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end)
 {
 	ConfigServer	new_server;
-	std::string		directives[7] = {
-						"listen", "server_name", "root", "client_max_body_size", "error_page", "location", "index"};
-	void			(ConfigParser::*ptr[])(std::vector<Token>::iterator&, std::vector<Token>::iterator, ConfigServer&) = {
-						&ConfigParser::handleListen, &ConfigParser::handleName, &ConfigParser::handleRoot, &ConfigParser::handleClientMax,
-						&ConfigParser::handleErrorPage, &ConfigParser::handleLocation, &ConfigParser::handleIndex};
 
 	++it;
 	if (it == end || it->type != TOKEN_LBRACE)
 		throw	ErrorException("Missing left brace.");
 	++it;
 
-	while (it != end && it->type != TOKEN_RBRACE)
-	{
-		for (int i = 0; i < 7; i++)
-		{
-			bool	found = false;
-			if (it->value == directives[i])
-			{
-				(this->*ptr[i])(it, end, new_server);
-				found = true;
-				break ;
-			}
-			if (!found)
-				throw	ErrorException("Unknown directive: " + it->value);
-			++it;
-		}
-	}
+	parseBlock(it, end, new_server);
+
 	if (it == end)
 		throw	ErrorException("Missing right brace for server block.");
 	_server.push_back(new_server);
@@ -80,9 +90,28 @@ void	ConfigParser::parseConfig(const char* path)
 	tokens = _lexer.tokenize(readFile(path));
 	for (std::vector<Token>::iterator it = tokens.begin(); it != tokens.end(); ++it)
 	{
-		if (it->value.compare("server") != 0)
+		if (it->value.compare("server") != 0 && it->type == TOKEN_WORD)
 			throw	ErrorException("Only server blocks are allowed in the main context.");
 		else
 			parseServer(it, tokens.end());
+	}
+}
+
+void	ConfigParser::parseBlock(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+{
+	while (it != end && it->type != TOKEN_RBRACE)
+	{
+		if (it->type == TOKEN_WORD)
+		{
+			std::map<std::string, Handler>::iterator h = _handlers.find(it->value);
+
+			if (h != _handlers.end())
+				(this->*(h->second))(it, end, config);
+			else
+				throw ErrorException("Unknown directive: " + it->value);
+		}
+		else
+			throw ErrorException("Unexpected token in block.");
+		++it;
 	}
 }
