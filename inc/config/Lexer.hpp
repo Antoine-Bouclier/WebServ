@@ -5,23 +5,26 @@
 
 class Lexer
 {
-	private:
+public:
+	/* -- Constructors -- */
+	Lexer();
+	Lexer(const Lexer&);
+	Lexer &operator=(const Lexer&);
+	~Lexer();
+
+	/* -- DEBUG -- */
+	void				printToken(void);
+
+	/* -- Member function -- */
+	std::vector<Token>	tokenize(const std::string&);
+
+private:
 		std::vector<Token>	_tokens;
 
-		TokenType	getTokenType(char c);
-		bool	isSpecial(char c);
-	public:
-		/* -- Constructors -- */
-		Lexer();
-		Lexer(const Lexer& copy);
-		Lexer &operator=(const Lexer& copy);
-		~Lexer();
-
-		/* -- DEBUG -- */
-		void				printToken();
-
-		/* -- Member function -- */
-		std::vector<Token>	tokenize(const std::string &path);
+		/* -- Private methods -- */
+		bool		isSpecial(char);
+		TokenType	getTokenType(char);
+		void		addToken(Token&, const uint, TokenType);
 };
 
 #endif

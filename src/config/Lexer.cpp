@@ -1,22 +1,83 @@
-#include "config/Lexer.hpp"
+#include "Lexer.hpp"
 
-Lexer::Lexer()
-{
+Lexer::Lexer() {}
 
-}
-Lexer::Lexer(const Lexer& copy)
+Lexer::Lexer(const Lexer&) {}
+
+Lexer &Lexer::operator=(const Lexer&)
 {
-	(void)copy;
-}
-Lexer &Lexer::operator=(const Lexer& copy)
-{
-	(void)copy;
 	return (*this);
 }
 
-Lexer::~Lexer()
-{
+Lexer::~Lexer() {}
 
+TokenType	Lexer::getTokenType(char c)
+{
+	switch (c)
+	{
+		case '\0':	return (TOKEN_EOF);
+		case '{':	return (TOKEN_LBRACE);
+		case '}':	return (TOKEN_RBRACE);
+		case ';':	return (TOKEN_SEMICOLON);
+
+		default:	return (TOKEN_WORD);
+	}
+}
+
+bool	Lexer::isSpecial(char c)
+{
+	return (c == '{' || c ==  '}' || c ==  ';' || c ==  '\0');
+}
+
+void Lexer::addToken(Token& token, const uint line, TokenType type)
+{
+	if (token.value.empty())
+		return ;
+
+	token.type = type;
+	token.line = line;
+	_tokens.push_back(token);
+	token.value.clear();
+}
+
+std::vector<Token>	Lexer::tokenize(const std::string& config)
+{
+	uint line = 1;
+	Token token;
+
+	_tokens.clear();
+
+	for (ulong i = 0; i < config.size(); i++)
+	{
+
+		if (config[i] == '\n')
+		{
+			addToken(token, line, TOKEN_WORD);
+			line++;
+			continue;
+		}
+
+		if (config[i] == '#')
+		{
+			addToken(token, line, TOKEN_WORD);
+			while (i < config.size() && config[i] != '\n')
+				i++;
+			continue ;
+		}
+
+		if (isSpecial(config[i]) || isspace(config[i]))
+		{
+			addToken(token, line, TOKEN_WORD);
+			if (isSpecial(config[i]))
+			{
+				token.value.push_back(config[i]);
+				addToken(token, line, getTokenType(config[i]));
+			}
+		}
+		else
+			token.value.push_back(config[i]);
+	}
+	return (_tokens);
 }
 
 void	Lexer::printToken()
@@ -26,83 +87,4 @@ void	Lexer::printToken()
 	{
 		std::cout << "Type: " << token[it->type] << "	| Value: " << it->value << '\n';
 	}
-}
-
-TokenType	Lexer::getTokenType(char c)
-{
-	if (c == '{')
-		return (TOKEN_LBRACE);
-	else if (c == '}')
-		return (TOKEN_RBRACE);
-	else if (c == ';')
-		return (TOKEN_SEMICOLON);
-	else if (c == '\0')
-		return (TOKEN_EOF);
-	else
-		return (TOKEN_WORD);
-}
-
-bool	Lexer::isSpecial(char c)
-{
-	if (c == '{' || c ==  '}' || c ==  ';' || c ==  '\0')
-		return (true);
-	else
-		return (false);
-}
-
-std::vector<Token>	Lexer::tokenize(const std::string &path)
-{
-	Token	current_token;
-	unsigned int current_line = 1;
-
-	for (unsigned long i = 0; i < path.size(); i++)
-	{
-
-		if (path[i] == '\n')
-		{
-			if (!current_token.value.empty())
-			{
-				current_token.type = TOKEN_WORD;
-				current_token.line = current_line;
-				_tokens.push_back(current_token);
-				current_token.value.clear();
-			}
-			current_line++;
-			continue;
-		}
-		if (path[i] == '#')
-		{
-			if (!current_token.value.empty())
-			{
-				current_token.type = TOKEN_WORD;
-				current_token.line = current_line;
-				_tokens.push_back(current_token);
-				current_token.value.erase(current_token.value.begin(), current_token.value.end());
-			}
-			while (i < path.size() && path[i] != '\n')
-				i++;
-			continue ;
-		}
-		if (isSpecial(path[i]) || isspace(path[i]))
-		{
-			if (!current_token.value.empty())
-			{
-				current_token.type = TOKEN_WORD;
-				current_token.line = current_line;
-				_tokens.push_back(current_token);
-				current_token.value.erase(current_token.value.begin(), current_token.value.end());
-			}
-			if (isSpecial(path[i]))
-			{
-				current_token.type = getTokenType(path[i]);
-				current_token.value.push_back(path[i]);
-				current_token.line = current_line;
-				_tokens.push_back(current_token);
-				current_token.value.erase(current_token.value.begin(), current_token.value.end());
-			}
-		}
-		else
-			current_token.value.push_back(path[i]);
-	}
-	return (_tokens);
 }

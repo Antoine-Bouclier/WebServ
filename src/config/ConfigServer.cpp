@@ -1,4 +1,4 @@
-#include "config/ConfigServer.hpp"
+#include "ConfigServer.hpp"
 
 ConfigServer::ConfigServer()
 {}

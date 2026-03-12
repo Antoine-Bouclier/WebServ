@@ -1,23 +1,20 @@
-#include "config/AConfig.hpp"
+#include "AConfig.hpp"
 
-AConfig::AConfig()
-{
-	
-}
+using std::map;
+using std::string;
+using std::vector;
 
-AConfig::~AConfig()
-{
-}
+AConfig::AConfig() {}
+AConfig::~AConfig() {}
 
 /* -- Setters -- */
-void	AConfig::setRoot(const std::string& root) { _root = root; }
+void	AConfig::setRoot(const string& root) { _root = root; }
+void	AConfig::addIndex(const string& index) { _index.push_back(index); }
 void	AConfig::setClientMaxBody(size_t size) { _client_max_body_size = size; }
-void	AConfig::addErrorPage(const int code, const std::string& path) { _error_pages[code] = path; }
-void	AConfig::addIndex(const std::string& one_index) { _index.push_back(one_index); }
-
+void	AConfig::addErrorPage(const int code, const string& page) { _error_pages[code] = page; }
 
 /* -- Getters -- */
-const std::string&					AConfig::getRoot() const { return (_root); }
-const std::vector<std::string>&		AConfig::getIndex() const { return (_index); }
-const std::map<int, std::string>&	AConfig::getErrorPage()const { return (_error_pages); }
-size_t								AConfig::getClientMaxBody() const { return (_client_max_body_size); }
+const string&					AConfig::getRoot() const { return (_root); }
+const vector<string>&			AConfig::getIndex() const { return (_index); }
+const map<int, string>&			AConfig::getErrorPage() const { return (_error_pages); }
+size_t							AConfig::getClientMaxBody() const { return (_client_max_body_size); }

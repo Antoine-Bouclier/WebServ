@@ -1,56 +1,69 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
-#include "WebServ.hpp"
-#include "Lexer.hpp"
-#include "ConfigServer.hpp"
-
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <exception>
+#include "Lexer.hpp"
+#include "WebServ.hpp"
+#include "ConfigServer.hpp"
+
+typedef typename std::vector<Token>::iterator iter;
 
 class ConfigParser
 {
 	public:
-		/* -- Constructors -- */
 		ConfigParser();
 		~ConfigParser();
 		
 		/* -- Main function -- */
 		void	parseConfig(const char* path);
 
-		typedef void (ConfigParser::*Handler)(std::vector<Token>::iterator&, std::vector<Token>::iterator, AConfig&);
-
 	private:
+		typedef void (ConfigParser::*Handler)(iter&, iter, AConfig&);
+
 		std::string						_path;
 		Lexer							_lexer;
 		std::vector<ConfigServer>		_server;
-		std::map<std::string, Handler> _handlers;
+		std::map<std::string, Handler>	_handlers;
 
-		void		checkExt();
-		std::string	readFile(const char* path);
-		void		parseServer(std::vector<Token>::iterator &it, std::vector<Token>::iterator end);
-		void		parseBlock(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void		initHandlers();
+		std::string		readFile(const char* path);
+		void			parseBlock(iter &it, iter end, AConfig &config);
 
 		/* -- Handlers AConfig -- */
-		void	handleIndex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleClientMax(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleErrorPage(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleRoot(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void		handleRoot(iter &it, iter end, AConfig &config);
+		void		handleIndex(iter &it, iter end, AConfig &config);
+		void		handleErrorPage(iter &it, iter end, AConfig &config);
+		void		handleClientMax(iter &it, iter end, AConfig &config);
 		
 		/* -- Handlers location -- */
-		void	handleAutoindex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handlePath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleUploadPath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleMethods(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleCgi(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void		handleCgi(iter &it, iter end, AConfig &config);
+		void		handlePath(iter &it, iter end, AConfig &config);
+		void		handleMethods(iter &it, iter end, AConfig &config);
+		void		handleAutoindex(iter &it, iter end, AConfig &config);
+		void		handleUploadPath(iter &it, iter end, AConfig &config);
 
 		/* -- Handlers server -- */
-		void	handleListen(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleServerNames(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
-		void	handleLocation(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config);
+		void		handleListen(iter &it, iter end, AConfig &config);
+		void		handleLocation(iter &it, iter end, AConfig &config);
+		void		handleServerNames(iter &it, iter end, AConfig &config);
+
+		template <typename T>
+		struct ConfigName;
+
+		template <typename T>
+		static T& require(iter &i, AConfig& config, const std::string& directive)
+		{
+			T* ptr = dynamic_cast<T*>(&config);
+			if (!ptr)
+				throw ErrorException(directive + " only allowed in " + ConfigName<T>::name + "block.", i->line);
+
+			return (*ptr);
+		}
 };
+
+template<> struct ConfigParser::ConfigName<ConfigServer> { static const char* const name; };
+template<> struct ConfigParser::ConfigName<ConfigLocation> { static const char* const name; };
 
 #endif

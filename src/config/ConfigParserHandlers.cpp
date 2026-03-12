@@ -1,241 +1,187 @@
-#include "config/ConfigParser.hpp"
+#include "ConfigParser.hpp"
 
-void	ConfigParser::handleAutoindex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+static bool				isNumber(const std::string& s);
+static void				requireToken(iter it, iter end, TokenType type, const std::string& msg);
+
+/* -- Location handlers -- */
+void	ConfigParser::handleAutoindex(iter &it, iter end, AConfig &config)
 {
-	++it;
+	ConfigLocation& loc = require<ConfigLocation>(it, config, "autoindex");
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("autoindex directive requires a value (on/off).", it->line);
-	if ((it + 1) == end || (it + 1)->type != TOKEN_SEMICOLON)
-		throw ErrorException("Too many arguments for autoindex directive.", it->line);
-
-	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
-	if (it->value == "on")
-		loc.setAutoindex(true);
-	else if (it->value == "off")
-		loc.setAutoindex(false);
-	else
+	requireToken(it, end, TOKEN_WORD, "autoindex directive requires a value (on/off).");
+	requireToken(it + 1, end, TOKEN_SEMICOLON, "Too many arguments for autoindex directive.");
+	if (it->value != "on" && it->value != "off")
 		throw ErrorException("Unknown value for autoindex: " + it->value + " Allowed value: (on/off).", it->line);
+
+	loc.setAutoindex(it->value == "on");
 
 	++it;
 }
 
-void	ConfigParser::handlePath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handlePath(iter &it, iter end, AConfig &config)
 {
-	++it;
-	
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("Path name required in location.", it->line);
+	ConfigLocation& loc = require<ConfigLocation>(it, config, "path");
+
+	requireToken(it, end, TOKEN_WORD, "Path name required in location.");
 	if (it->value[0] != '/')
 		throw ErrorException("Missing '/' at the beginning of the path.", it->line);
 	
-	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
 	loc.setPath(it->value);
 
 	++it;
 }
 
-void	ConfigParser::handleUploadPath(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleUploadPath(iter &it, iter end, AConfig &config)
 {
-	++it;
+	ConfigLocation& loc = require<ConfigLocation>(it, config, "upload_path");
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("upload_path directive requires a value.", it->line);
-	if ((it + 1) == end || (it + 1)->type != TOKEN_SEMICOLON)
-		throw ErrorException("Too many arguments for upload_path directive.", it->line);
+	requireToken(it, end, TOKEN_WORD, "upload_path directive requires a value.");
+	requireToken(it + 1, end, TOKEN_SEMICOLON, "Too many arguments for upload_path directive.");
 
-	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
 	loc.setUploadPath(it->value);
 
 	++it;
 }
 
-void	ConfigParser::handleMethods(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleMethods(iter &it, iter end, AConfig &config)
 {
-	++it;
-
-	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
+	ConfigLocation& loc = require<ConfigLocation>(it, config, "allowed_methods");
+	
 	loc.clearMethods();
 
 	while (it != end && it->type != TOKEN_SEMICOLON)
 	{
 		if (it->type == TOKEN_WORD)
 		{
-			if (it->value == "GET" || it->value == "POST" || it->value == "DELETE")
-				loc.addMethod(it->value);
-			else
+			if (it->value != "GET" && it->value != "POST" && it->value != "DELETE")
 				throw ErrorException("Unknown method: " + it->value + ". Valid: [GET POST DELETE].", it->line);
+			loc.addMethod(it->value);
 		}
 		else 
-			throw ErrorException("Unexpected token in allowed_methods." + it->value, it->line);
+			throw ErrorException("Unexpected token in allowed_methods: " + it->value, it->line);
 		++it;
 	}
 	
-	if (it == end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing ';' after allowed_methods.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing ';' after allowed_methods.");
 }
 
-void	ConfigParser::handleCgi(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleCgi(iter &it, iter end, AConfig &config)
 {
-	++it;
+	ConfigLocation& loc = require<ConfigLocation>(it, config, "cgi");
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("cgi directive requires an extension.", it->line);
-	std::string	extension = it->value;
+	requireToken(it, end, TOKEN_WORD, "cgi directive requires an extension.");
+	requireToken(it + 1, end, TOKEN_WORD, "cgi directive requires a binary path for extension.");
 
-	++it;
-	if (it == end || it->type != TOKEN_WORD)
-	throw ErrorException("cgi directive requires a binary path for extension.", it->line);
-	std::string	binary_path = it->value;
+	std::string	extension = (it++)->value;
+	std::string	binary_path = (it++)->value;
 
-	++it;
-	if (it == end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing semicolon ';'.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing ';' after cgi.");
 
-	ConfigLocation& loc = static_cast<ConfigLocation&>(config);
 	loc.addCgi(extension, binary_path);
 }
 
-/* -- Handlers server -- */
-void	ConfigParser::handleListen(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+/* -- Server handlers -- */
+void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 {
-	++it;
+	requireToken(it, end, TOKEN_WORD, "listen directive requires a Host.");
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("listen directive requires a Host.", it->line);
+	std::string	host = "0.0.0.0";
+	std::string	port_str = "8080";
 
-	std::string	host;
-	std::string	port_str;
 	size_t	found = it->value.find(':');
 	if (found != std::string::npos)
 	{
 		host = it->value.substr(0, found);
 		port_str = it->value.substr(found + 1);
 	}
-	else
-	{
-		host = "0.0.0.0";
-		port_str = "8080";
-	}
 
 	++it;
-	if (it ==end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing semicolon ';' after listen directive.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after listen directive.");
 
-	if (port_str.empty() || port_str.find_first_not_of("0123456789") != std::string::npos)
+	if (!isNumber(port_str))
 		throw ErrorException("Invalid port: " + port_str, it->line);
 	long	port = std::atol(port_str.c_str());
 	if (port < 1 || port > 65535)
 		throw ErrorException("Port out of range: " + port_str, it->line);
 
-	ConfigServer& server = static_cast<ConfigServer&>(config);
+	
+	ConfigServer& server = require<ConfigServer>(it, config, "listen");
 	server.setHost(host);
 	server.setPort(static_cast<uint16_t>(port));
 }
 
-void	ConfigParser::handleServerNames(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleServerNames(iter &it, iter end, AConfig &config)
 {
-	++it;
-	ConfigServer& server = static_cast<ConfigServer&>(config);
+	ConfigServer& server = require<ConfigServer>(it, config, "server_names");
 
-	if (it == end || it->type == TOKEN_SEMICOLON)
-		throw ErrorException("server_name directive requires at least one value.", it->line);
+	requireToken(it, end, TOKEN_WORD, "server_name directive requires at least one value.");
 	while (it != end && it->type == TOKEN_WORD)
 	{
 		server.addServerName(it->value);
 		++it;
 	}
-	if (it == end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing semicolon ';' after server_name directive.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after server_name directive.");
 }
 
-void	ConfigParser::handleLocation(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleLocation(iter &it, iter end, AConfig &config)
 {
-	++it;
-	ConfigServer& server = static_cast<ConfigServer&>(config);
 	ConfigLocation	new_loc;
+	ConfigServer&	server = require<ConfigServer>(it, config, "locations");
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("Location requires a path.", it->line);
+	requireToken(it, end, TOKEN_WORD, "Location requires a path.");
 	if (it->value[0] != '/')
 		throw ErrorException("Location prefix must start with '/'", it->line);
 
 	new_loc.setPath(it->value);
 
-	++it;
-
-	if (it == end || it->type != TOKEN_LBRACE)
-		throw ErrorException("Expected '{' after location path.", it->line);
-	++it;
 	parseBlock(it, end, new_loc);
 	server.addLocation(new_loc);
 }
 
-/* -- Handlers AConfig -- */
-void	ConfigParser::handleIndex(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+/* -- AConfig handlers -- */
+void	ConfigParser::handleIndex(iter &it, iter end, AConfig &config)
 {
-	++it;
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("Index directive require at least one file.", it->line);
+	requireToken(it, end, TOKEN_WORD, "Index directive require at least one file.");
+
 	while (it != end && it->type == TOKEN_WORD)
-	{
-		config.addIndex(it->value);
-		++it;
-	}
-	if (it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing semicolon ';' after index directive.", it->line);
+		config.addIndex((it++)->value);
+
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after index directive.");
 }
 
-void	ConfigParser::handleClientMax(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleClientMax(iter &it, iter end, AConfig &config)
 {
-	++it;
-	long	multiplier = 1;
+	requireToken(it, end, TOKEN_WORD, "client_max_body_size directive require a value.");
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("client_max_body_size directive require a value.", it->line);
-
+	long		multiplier = 1;
 	std::string	value = it->value;
 	char		last_char = value.at(value.size() - 1);
 
 	if (!isdigit(last_char))
 	{
-		if (last_char == 'K' || last_char == 'k')
-			multiplier = 1024;
-		else if (last_char == 'M' || last_char == 'm')
-			multiplier = 1024 * 1024;
-		else if (last_char == 'G' || last_char == 'g')
-			multiplier = 1024 * 1024 * 1024;
-		else
-			throw ErrorException("Invalid unit: " + value, it->line);
-		value = value.substr(0, it->value.size() - 1);
+		switch (toupper(last_char))
+		{
+			case 'K': multiplier = 1024L; break;
+			case 'M': multiplier = 1024L * 1024L; break;
+			case 'G': multiplier = 1024L * 1024L * 1024L; break;
+			default:
+				throw ErrorException("Invalid unit: " + value, it->line);
+		}
+		value.erase(value.size() - 1);
 	}
 
-	if (value.empty() || value.find_first_not_of("0123456789") != std::string::npos)
+	if (!isNumber(value))
 		throw ErrorException("Invalid numeric value in client_max_body_size", it->line);
 
-	long		size = std::atol(value.c_str()) * multiplier;
+	long	size = std::atol(value.c_str()) * multiplier;
 	config.setClientMaxBody(static_cast<size_t>(size));
 
 	++it;
-	if (it == end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Too many arguments for client_max_body_size directive.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Too many arguments for client_max_body_size directive.");
 }
 
-bool	isNumber(const std::string& s)
+void	ConfigParser::handleErrorPage(iter &it, iter end, AConfig &config)
 {
-	if (s.empty())
-		return (false);
-	for (std::string::const_iterator it = s.begin(); it != s.end(); ++it)
-	{
-		if (!isdigit(*it))
-			return (false);
-	}
-	return (true);
-}
-
-void	ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
-{
-	++it;
 	std::vector<int>	codes;
 
 	while (it != end && it->type == TOKEN_WORD && isNumber(it->value))
@@ -247,14 +193,12 @@ void	ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, std::vector
 		++it;
 	}
 
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("Missing argument in error_page directive.", it->line);
+	requireToken(it, end, TOKEN_WORD, "Missing argument in error_page directive.");
 
 	std::string	path = it->value;
 
 	++it;
-	if (it == end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing semicolon ';' after error_page directive.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after error_page directive.");
 
 	if (codes.empty())
 		throw ErrorException("error_page directive requires at least one code", it->line);
@@ -265,17 +209,29 @@ void	ConfigParser::handleErrorPage(std::vector<Token>::iterator &it, std::vector
 	}
 }
 
-void	ConfigParser::handleRoot(std::vector<Token>::iterator &it, std::vector<Token>::iterator end, AConfig &config)
+void	ConfigParser::handleRoot(iter &it, iter end, AConfig &config)
 {
-	++it;
-
-	if (it == end || it->type != TOKEN_WORD)
-		throw ErrorException("root directive requires a path.", it->line);
+	requireToken(it, end, TOKEN_WORD, "root directive requires a path.");
 
 	config.setRoot(it->value);
 
 	++it;
 
-	if (it == end || it->type != TOKEN_SEMICOLON)
-		throw ErrorException("Missing semicolon ';' after root directive.", it->line);
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after root directive.");
 }
+
+/* -- Wrappers (utils) -- */
+static bool isNumber(const std::string& s)
+{
+	return not (s.empty() || s.find_first_not_of("0123456789") != std::string::npos);
+}
+
+static void requireToken(iter it, iter end, TokenType type, const std::string& msg)
+{
+	if (it == end || it->type != type)
+		throw ErrorException(msg, it->line);
+}
+
+/* -- Template specialisation definitions -- */
+const char* const ConfigParser::ConfigName<ConfigServer>::name = "server";
+const char* const ConfigParser::ConfigName<ConfigLocation>::name = "location";

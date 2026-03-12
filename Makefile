@@ -1,41 +1,82 @@
-NAME		=	webserv
-CXX			=	c++
-CFLAGS		=	-Wall -Wextra -Werror -std=c++98 -MMD
+.PHONY : all clean fclean re
 
-SRC_DIR		=	src/
-OBJ_DIR		=	obj/
-INC_DIR		=	inc/
+NAME := webserv
 
-SRC_FILES	=	main.cpp \
-				config/AConfig.cpp \
-				config/ConfigParser.cpp \
-				config/ConfigParserHandlers.cpp \
-				config/ConfigServer.cpp \
-				config/ConfigLocation.cpp \
-				config/Lexer.cpp
+# ╭━━━━━━━━━━━━══════════╕出 ❖ BASICS VARIABLES ❖ 力╒═══════════━━━━━━━━━━━━╮ #
 
-OBJ			=	$(addprefix $(OBJ_DIR), $(SRC_FILES:.cpp=.o))
-DEP			=	$(OBJ:.o=.d)
+CXX				:=	c++
 
-INCLUDES	=	-I $(INC_DIR)
+CXXFLAGS		:=	-Wall -Wextra -Werror -MMD -std=c++98
 
-all: $(NAME)
+RM				:=	rm	-rf
 
-$(NAME): $(OBJ)
-	$(CXX) $(CFLAGS) $(OBJ) -o $(NAME)
+MKDIR			:=	mkdir -p
 
-$(OBJ_DIR)%.o: $(SRC_DIR)%.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CFLAGS) $(INCLUDES) -o $@ -c $<
+SHOW_MSG_CLEAN	=	true
+
+MAKEFLAGS		+=	--no-print-directory
+
+# ╰━━━━━━━━━━━━━━━━════════════════╛出 ❖ 力╘════════════════━━━━━━━━━━━━━━━━╯ #
+
+# ╭━━━━━━━━━━━━══════════╕出 ❖ FILE TREE ❖ 力╒═══════════━━━━━━━━━━━━╮ #
+
+D_SRC		=	src/
+D_INC		=	inc/
+
+D_BIN		=	.bin/
+
+vpath %.cpp $(D_SRC):$(CURDIR):$(D_SRC)config
+
+# file lists
+SRCS		=	main.cpp			\
+				Lexer.cpp			\
+				AConfig.cpp			\
+				ConfigParser.cpp	\
+				ConfigServer.cpp	\
+				ConfigLocation.cpp	\
+				ConfigParserHandlers.cpp
+
+OBJS		=	$(addprefix $(D_BIN), $(SRCS:.cpp=.o))
+DEPS		=	$(addprefix $(D_BIN), $(SRCS:.cpp=.d))
+
+INC			=	-I$(D_INC) -I$(D_INC)config/
+
+# ╭━━━━━━━━━━━━══════════╕出 ❖ RULES ❖ 力╒═══════════━━━━━━━━━━━━╮ #
+
+all:	$(NAME)
+
+$(NAME):	$(OBJS) | Makefile $(D_BIN)
+	@$(CXX) $(CXXFLAGS) $(INC) $(OBJS) -o $(NAME)
+	@echo "\e[1;32m🎍 $(NAME) program created successfully ! 🎍\e[0m"
+
+$(D_BIN):
+	@$(MKDIR) $@
+
+$(D_BIN)%.o: %.cpp | Makefile $(D_BIN)
+	@echo "\e[1m🫧 Compiling $< 🫧\e[0m"
+	@$(CXX) $(CXXFLAGS) $(INC) -c $< -o $@
 
 clean:
-	rm -rf $(OBJ_DIR)
+	@$(RM) $(D_BIN)
+	@echo "\e[1;36m🫗 Deleted $(NAME) object files 🫗\e[0m"
 
-fclean: clean
-	rm -f $(NAME)
+fclean:
+	@$(MAKE) -s SHOW_MSG_CLEAN=false clean
+	@$(RM) $(NAME)
+	@echo "\e[1;34m🧼 $(NAME) executable deleted ! 🧼\e[0m"
 
-re: fclean all
+re:
+	@$(MAKE) fclean
+	@$(MAKE) all
 
--include $(DEP)
+valgrind:
+	@$(MAKE)
+	@clear
+	@valgrind										\
+		--leak-check=full								\
+		--show-leak-kinds=all							\
+		--track-origins=yes 							\
+		--track-fds=yes									\
+		./$(NAME)
 
-.PHONY: all clean fclean re
+-include $(DEPS)

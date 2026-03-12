@@ -1,5 +1,5 @@
 #include "WebServ.hpp"
-#include "config/ConfigParser.hpp"
+#include "ConfigParser.hpp"
 
 int	main(int argc, char **argv)
 {

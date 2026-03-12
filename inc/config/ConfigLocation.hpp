@@ -6,34 +6,32 @@
 
 class ConfigLocation : public AConfig
 {
-	private:
-		bool			_autoindex;
-		std::string		_path;
-		std::string		_upload_path;
+public:
+	ConfigLocation();
+	~ConfigLocation();
 
-		std::vector<std::string>	_methods;
+	void	clearMethods(void);
 
-		std::map<std::string, std::string>	_cgi;
+	/* -- Setters -- */
+	void	setAutoindex(bool active);
+	void	setPath(const std::string& path);
+	void	addMethod(const std::string& method);
+	void	setUploadPath(const std::string& path);
+	void	addCgi(const std::string& extension, const std::string& binaryPath);
 
-	public:
-		ConfigLocation();
-		~ConfigLocation();
+	/* -- Getters -- */
+	bool										getAutoindex(void) const;
+	const std::string&							getPath(void) const;
+	const std::string&							getUploadPath(void) const;
+	const std::vector<std::string>&				getMethods(void) const;
+	const std::map<std::string, std::string>&	getCgi(void) const;
 
-		void	clearMethods();
-
-		/* -- Setters -- */
-		void	setAutoindex(bool autoindex);
-		void	setPath(const std::string& path);
-		void	setUploadPath(const std::string& path);
-		void	addMethod(const std::string& method);
-		void	addCgi(const std::string& extension, const std::string& binaryPath);
-
-		/* -- Getters -- */
-		bool										getAutoindex() const;
-		const std::string&							getPath() const;
-		const std::string&							getUploadPath() const;
-		const std::vector<std::string>&				getMethods() const;
-		const std::map<std::string, std::string>&	getCgi() const;
+private:
+	bool								_autoindex;
+	std::string							_path;
+	std::string							_upload_path;
+	std::vector<std::string>			_methods;
+	std::map<std::string, std::string>	_cgi;
 };
 
 #endif
