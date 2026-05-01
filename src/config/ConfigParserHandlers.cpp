@@ -229,7 +229,7 @@ static bool isNumber(const std::string& s)
 static void requireToken(iter it, iter end, TokenType type, const std::string& msg)
 {
 	if (it == end || it->type != type)
-		throw ErrorException(msg, it->line);
+		throw ErrorException(msg, it != end ? it->line : (--it)->line);
 }
 
 /* -- Template specialisation definitions -- */

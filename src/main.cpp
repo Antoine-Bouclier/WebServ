@@ -1,3 +1,4 @@
+#include "parsing.hpp"
 #include "WebServ.hpp"
 #include "ConfigParser.hpp"
 
@@ -10,12 +11,12 @@ int	main(int argc, char **argv)
 		try
 		{
 			parser.parseConfig(argv[1]);
+			check_required(parser);
 		}
 		catch(const std::exception& e)
 		{
 			std::cerr << e.what() << '\n';
 		}
-		
 	}
 	return (0);
 }

@@ -4,7 +4,8 @@ using std::map;
 using std::string;
 using std::vector;
 
-AConfig::AConfig() {}
+AConfig::AConfig() : _client_max_body_size(0)
+{}
 AConfig::~AConfig() {}
 
 /* -- Setters -- */

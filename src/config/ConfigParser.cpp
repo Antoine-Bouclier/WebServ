@@ -1,10 +1,11 @@
 #include "ConfigParser.hpp"
 
 using std::string;
+using std::vector;
 
 void	ConfigParser::parseConfig(const char* path)
 {
-	std::vector<Token>	tokens;
+	vector<Token>	tokens;
 
 	_path = path;
 	if (_path.size() < 5 || _path.compare(_path.size() - 5, 5, ".conf"))
@@ -95,5 +96,7 @@ void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 	if (it == end || it->type != TOKEN_RBRACE)
 		throw	ErrorException("Missing right brace in block.", it->line);
 }
+
+const vector<ConfigServer>&	ConfigParser::getServer(void) const {return (_server); }
 
 ConfigParser::~ConfigParser() {}

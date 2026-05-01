@@ -25,11 +25,12 @@ D_INC		=	inc/
 
 D_BIN		=	.bin/
 
-vpath %.cpp $(D_SRC):$(CURDIR):$(D_SRC)config
+vpath %.cpp $(D_SRC):$(CURDIR):$(D_SRC)config:$(D_SRC)semantic
 
 # file lists
 SRCS		=	main.cpp			\
 				Lexer.cpp			\
+				checker.cpp			\
 				AConfig.cpp			\
 				ConfigParser.cpp	\
 				ConfigServer.cpp	\

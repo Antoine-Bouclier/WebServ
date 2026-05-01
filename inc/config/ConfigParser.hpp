@@ -16,6 +16,8 @@ class ConfigParser
 	public:
 		ConfigParser();
 		~ConfigParser();
+
+		const std::vector<ConfigServer>& getServer(void) const;
 		
 		/* -- Main function -- */
 		void	parseConfig(const char* path);
