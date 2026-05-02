@@ -12,11 +12,14 @@ void	ConfigParser::parseConfig(const char* path)
 		throw	ErrorException("Extension must be <.conf>");
 
 	tokens = _lexer.tokenize(readFile(path));
-	_lexer.printToken();
+	// _lexer.printToken();
+
+	if (tokens.empty())
+		throw ErrorException("Empty config file");
 
 	for (iter it = tokens.begin(); it != tokens.end(); ++it)
 	{
-		if (it->value != "server" && it->type == TOKEN_WORD)
+		if (it->type != TOKEN_WORD || it->value != "server")
 			throw	ErrorException("Only server blocks are allowed in the main context.", it->line);
 
 		ConfigServer server_block;
@@ -73,7 +76,7 @@ string	ConfigParser::readFile(const char* path)
 void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 {
 	if (++it == end || it->type != TOKEN_LBRACE)
-		throw	ErrorException("Missing left brace in block.", it->line);
+		throw (it != end ? ErrorException("Missing left brace in block.", it->line) : ErrorException("Missing left brace in block."));
 
 	++it;
 
@@ -94,7 +97,7 @@ void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 	}
 
 	if (it == end || it->type != TOKEN_RBRACE)
-		throw	ErrorException("Missing right brace in block.", it->line);
+		throw (it != end ? ErrorException("Missing right brace in block.", it->line) : ErrorException("Missing right brace in block."));
 }
 
 const vector<ConfigServer>&	ConfigParser::getServer(void) const {return (_server); }

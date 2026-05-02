@@ -6,7 +6,7 @@ The main goal of this project is to build a HTTP web server in C++98. The server
 
 ```
 make
-./webser [File]
+./webserv [File]
 ```
 
 ## Introduction

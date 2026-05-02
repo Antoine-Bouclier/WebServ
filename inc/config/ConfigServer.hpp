@@ -8,7 +8,7 @@
 class ConfigServer : public AConfig
 {
 	private:
-		int16_t						_port;
+		int							_port;
 		std::string					_host;
 		std::vector<ConfigLocation>	_locations;
 		std::pair<int, std::string>	_redirection;
@@ -19,13 +19,13 @@ class ConfigServer : public AConfig
 		~ConfigServer();
 
 		/* -- Setter -- */
-		void	setPort(int16_t port);
+		void	setPort(int port);
 		void	setHost(const std::string& host);
 		void	addServerName(const std::string& name);
 		void	addLocation(const ConfigLocation& location);
 
 		/* -- Getters -- */
-		int16_t								getPort(void) const;
+		int									getPort(void) const;
 		std::string							getHost(void) const;
 		const std::vector<std::string>&		getServerNames(void) const;
 		const std::vector<ConfigLocation>&	getLocations(void) const;

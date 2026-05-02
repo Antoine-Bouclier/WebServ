@@ -61,6 +61,9 @@ void	ConfigParser::handleMethods(iter &it, iter end, AConfig &config)
 			throw ErrorException("Unexpected token in allowed_methods: " + it->value, it->line);
 		++it;
 	}
+
+	if (loc.getMethods().empty())
+		throw (it != end ? ErrorException("methods directive cannot be empty", it->line) : ErrorException("methods directive cannot be empty"));
 	
 	requireToken(it, end, TOKEN_SEMICOLON, "Missing ';' after allowed_methods.");
 }
@@ -85,6 +88,8 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 {
 	requireToken(it, end, TOKEN_WORD, "listen directive requires a Host.");
 
+	ConfigServer& server = require<ConfigServer>(it, config, "listen");
+
 	std::string	host = "0.0.0.0";
 	std::string	port_str = "8080";
 
@@ -93,6 +98,13 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 	{
 		host = it->value.substr(0, found);
 		port_str = it->value.substr(found + 1);
+	}
+	else
+	{
+		if (isNumber(it->value) && it->value.size() < 6 && atoi(it->value.c_str()) <= 65535)
+			port_str = it->value;
+		else
+			throw ErrorException("Wrong parameter in listen directive", it->line);
 	}
 
 	++it;
@@ -103,11 +115,11 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 	long	port = std::atol(port_str.c_str());
 	if (port < 1 || port > 65535)
 		throw ErrorException("Port out of range: " + port_str, it->line);
+	if (host.empty())
+		throw ErrorException("Empty host name", it->line);
 
-	
-	ConfigServer& server = require<ConfigServer>(it, config, "listen");
 	server.setHost(host);
-	server.setPort(static_cast<uint16_t>(port));
+	server.setPort(port);
 }
 
 void	ConfigParser::handleServerNames(iter &it, iter end, AConfig &config)
@@ -152,6 +164,8 @@ void	ConfigParser::handleIndex(iter &it, iter end, AConfig &config)
 void	ConfigParser::handleClientMax(iter &it, iter end, AConfig &config)
 {
 	requireToken(it, end, TOKEN_WORD, "client_max_body_size directive require a value.");
+	if (it->value.empty())
+		throw ErrorException("Empty client_max_body_size", it->line);
 
 	long		multiplier = 1;
 	std::string	value = it->value;
@@ -173,8 +187,19 @@ void	ConfigParser::handleClientMax(iter &it, iter end, AConfig &config)
 	if (!isNumber(value))
 		throw ErrorException("Invalid numeric value in client_max_body_size", it->line);
 
-	long	size = std::atol(value.c_str()) * multiplier;
-	config.setClientMaxBody(static_cast<size_t>(size));
+	size_t	number = 0;
+	for (size_t i = 0; i < value.size(); i++)
+	{
+		size_t	digit = value[i] - '0';
+		if (number > (static_cast<size_t>(-1) - digit) / 10)
+			throw ErrorException("client_max_body_size doesn't fit in a size_t", it->line);
+		number = number * 10 + digit;
+	}
+	
+	if (number > static_cast<size_t>(-1) / multiplier)
+		throw ErrorException("client_max_body_size doesn't fit in a size_t", it->line);
+
+	config.setClientMaxBody(number * multiplier);
 
 	++it;
 	requireToken(it, end, TOKEN_SEMICOLON, "Too many arguments for client_max_body_size directive.");
@@ -193,9 +218,11 @@ void	ConfigParser::handleErrorPage(iter &it, iter end, AConfig &config)
 		++it;
 	}
 
-	requireToken(it, end, TOKEN_WORD, "Missing argument in error_page directive.");
+	requireToken(it, end, TOKEN_WORD, "Missing path in error_page directive.");
 
 	std::string	path = it->value;
+	if (path[0] != '/' || path.size() <= 1)
+		throw ErrorException("Invalid error_page path", it->line);
 
 	++it;
 	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after error_page directive.");
@@ -205,7 +232,7 @@ void	ConfigParser::handleErrorPage(iter &it, iter end, AConfig &config)
 
 	for (size_t i = 0; i < codes.size(); i++)
 	{
-		config.addErrorPage(codes[i],path);
+		config.addErrorPage(codes[i], path);
 	}
 }
 
@@ -223,13 +250,13 @@ void	ConfigParser::handleRoot(iter &it, iter end, AConfig &config)
 /* -- Wrappers (utils) -- */
 static bool isNumber(const std::string& s)
 {
-	return not (s.empty() || s.find_first_not_of("0123456789") != std::string::npos);
+	return !(s.empty() || s.find_first_not_of("0123456789") != std::string::npos);
 }
 
 static void requireToken(iter it, iter end, TokenType type, const std::string& msg)
 {
 	if (it == end || it->type != type)
-		throw ErrorException(msg, it != end ? it->line : (--it)->line);
+		throw (it != end ? ErrorException(msg, it->line) : ErrorException(msg));
 }
 
 /* -- Template specialisation definitions -- */
