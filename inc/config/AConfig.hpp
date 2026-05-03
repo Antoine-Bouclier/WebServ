@@ -10,6 +10,7 @@ protected:
 	std::vector<std::string>	_index;
 	std::map<int, std::string>	_error_pages;
 	size_t						_client_max_body_size;
+	bool						_max_size_assigned;
 
 public:
 	AConfig();
@@ -20,12 +21,14 @@ public:
 	void	setRoot(const std::string& root);
 	void	addIndex(const std::string& index);
 	void	addErrorPage(const int code, const std::string& page);
+	void	setAssignedClientMaxBodySize(void);
 
 	/* -- Getters -- */
 	const std::string&					getRoot(void) const;
 	const std::vector<std::string>&		getIndex(void) const;
 	const std::map<int, std::string>&	getErrorPage(void) const;
 	size_t								getClientMaxBody(void) const;
+	bool								isClientMaxBodySizeAssigned(void) const;
 };
 
 #endif

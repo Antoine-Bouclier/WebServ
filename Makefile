@@ -41,7 +41,7 @@ SRCS		=	main.cpp			\
 OBJS		=	$(addprefix $(D_BIN), $(SRCS:.cpp=.o))
 DEPS		=	$(addprefix $(D_BIN), $(SRCS:.cpp=.d))
 
-INC			=	-I$(D_INC) -I$(D_INC)config/ -I$(D_INC)server
+INC			=	-I$(D_INC) -I$(D_INC)config/ -I$(D_INC)server -I$(D_INC)core
 
 # ╭━━━━━━━━━━━━══════════╕出 ❖ RULES ❖ 力╒═══════════━━━━━━━━━━━━╮ #
 

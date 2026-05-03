@@ -6,6 +6,35 @@ using std::map;
 using std::string;
 using std::vector;
 
+typedef typename vector<ConfigServer>::const_iterator	server_i;
+typedef typename vector<string>::const_iterator			string_i;
+
+static void hasDuplicateServer(const vector<ConfigServer>& servers)
+{
+	for (server_i a = servers.begin(); a != servers.end(); ++a)
+	{
+		for (server_i b = a + 1; b != servers.end(); ++b)
+		{
+			if (a->getHost() == b->getHost() && a->getPort() == b->getPort())
+			{
+				const vector<string>& a_names = a->getServerNames();
+				const vector<string>& b_names = b->getServerNames();
+
+				if (a_names.empty() && b_names.empty())
+					throw ErrorException("Duplicate default server found");
+				else
+				{
+					for (string_i name = b_names.begin(); name != b_names.end(); name++)
+					{
+						if (std::find(a_names.begin(), a_names.end(), *name) != a_names.end())
+							throw ErrorException("Duplicate virtual server found");
+					}
+				}
+			}
+		}
+	}
+}
+
 static void	check_server_block(const ConfigServer& server)
 {
 	if (server.getPort() <= 0)
@@ -56,5 +85,8 @@ bool	check_required(const ConfigParser& parsed)
 		for (; locs_it != serv_it->getLocations().end(); locs_it++)
 			check_location_block(*locs_it);
 	}
+
+	hasDuplicateServer(parsed.getServer());
+
 	return (true);
 }

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "ConfigParser.hpp"
 
 static bool				isNumber(const std::string& s);
@@ -7,6 +8,10 @@ static void				requireToken(iter it, iter end, TokenType type, const std::string
 void	ConfigParser::handleAutoindex(iter &it, iter end, AConfig &config)
 {
 	ConfigLocation& loc = require<ConfigLocation>(it, config, "autoindex");
+
+	if (loc.isAutoIndexAssigned())
+		throw ErrorException("Duplicate autoindex directive", it->line);
+	loc.setAutoIndexAssigned();
 
 	requireToken(it, end, TOKEN_WORD, "autoindex directive requires a value (on/off).");
 	requireToken(it + 1, end, TOKEN_SEMICOLON, "Too many arguments for autoindex directive.");
@@ -18,22 +23,12 @@ void	ConfigParser::handleAutoindex(iter &it, iter end, AConfig &config)
 	++it;
 }
 
-void	ConfigParser::handlePath(iter &it, iter end, AConfig &config)
-{
-	ConfigLocation& loc = require<ConfigLocation>(it, config, "path");
-
-	requireToken(it, end, TOKEN_WORD, "Path name required in location.");
-	if (it->value[0] != '/')
-		throw ErrorException("Missing '/' at the beginning of the path.", it->line);
-	
-	loc.setPath(it->value);
-
-	++it;
-}
-
 void	ConfigParser::handleUploadPath(iter &it, iter end, AConfig &config)
 {
 	ConfigLocation& loc = require<ConfigLocation>(it, config, "upload_path");
+
+	if (!loc.getUploadPath().empty())
+		throw ErrorException("Duplicate upload_path directive", it->line);
 
 	requireToken(it, end, TOKEN_WORD, "upload_path directive requires a value.");
 	requireToken(it + 1, end, TOKEN_SEMICOLON, "Too many arguments for upload_path directive.");
@@ -46,6 +41,10 @@ void	ConfigParser::handleUploadPath(iter &it, iter end, AConfig &config)
 void	ConfigParser::handleMethods(iter &it, iter end, AConfig &config)
 {
 	ConfigLocation& loc = require<ConfigLocation>(it, config, "allowed_methods");
+
+	if (loc.isMethodsAssigned())
+		throw ErrorException("Duplicate methods directive", it->line);
+	loc.setMethodsAssigned();
 	
 	loc.clearMethods();
 
@@ -55,6 +54,8 @@ void	ConfigParser::handleMethods(iter &it, iter end, AConfig &config)
 		{
 			if (it->value != "GET" && it->value != "POST" && it->value != "DELETE")
 				throw ErrorException("Unknown method: " + it->value + ". Valid: [GET POST DELETE].", it->line);
+			if (std::find(loc.getMethods().begin(), loc.getMethods().end(), it->value) != loc.getMethods().end())
+				throw ErrorException("Duplicate method found in methods directive", it->line);
 			loc.addMethod(it->value);
 		}
 		else 
@@ -80,6 +81,9 @@ void	ConfigParser::handleCgi(iter &it, iter end, AConfig &config)
 
 	requireToken(it, end, TOKEN_SEMICOLON, "Missing ';' after cgi.");
 
+	if (loc.getCgi().find(extension) != loc.getCgi().end())
+		throw ErrorException("Duplicate extension found in cgi directive", it->line);
+
 	loc.addCgi(extension, binary_path);
 }
 
@@ -89,6 +93,9 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 	requireToken(it, end, TOKEN_WORD, "listen directive requires a Host.");
 
 	ConfigServer& server = require<ConfigServer>(it, config, "listen");
+
+	if (server.getPort() != -1 || !server.getHost().empty())
+		throw ErrorException("Duplicate listen directive", it->line);
 
 	std::string	host = "0.0.0.0";
 	std::string	port_str = "8080";
@@ -100,23 +107,23 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 		port_str = it->value.substr(found + 1);
 	}
 	else
-	{
-		if (isNumber(it->value) && it->value.size() < 6 && atoi(it->value.c_str()) <= 65535)
-			port_str = it->value;
-		else
-			throw ErrorException("Wrong parameter in listen directive", it->line);
-	}
+		port_str = it->value;
 
 	++it;
 	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after listen directive.");
 
-	if (!isNumber(port_str))
+	if (!isNumber(port_str) || port_str.size() > 5)
 		throw ErrorException("Invalid port: " + port_str, it->line);
-	long	port = std::atol(port_str.c_str());
+
+	int port = std::atoi(port_str.c_str());
+
 	if (port < 1 || port > 65535)
 		throw ErrorException("Port out of range: " + port_str, it->line);
+
 	if (host.empty())
 		throw ErrorException("Empty host name", it->line);
+	else if (host == "*")
+		host = "0.0.0.0";
 
 	server.setHost(host);
 	server.setPort(port);
@@ -125,6 +132,9 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 void	ConfigParser::handleServerNames(iter &it, iter end, AConfig &config)
 {
 	ConfigServer& server = require<ConfigServer>(it, config, "server_names");
+
+	if (!server.getServerNames().empty())
+		throw ErrorException("Duplicate server_names directive", it->line);
 
 	requireToken(it, end, TOKEN_WORD, "server_name directive requires at least one value.");
 	while (it != end && it->type == TOKEN_WORD)
@@ -153,6 +163,10 @@ void	ConfigParser::handleLocation(iter &it, iter end, AConfig &config)
 /* -- AConfig handlers -- */
 void	ConfigParser::handleIndex(iter &it, iter end, AConfig &config)
 {
+/* Uncomment to restrict index directive's duplicates */
+	// if (!config.getIndex().empty())
+	// 	throw ErrorException("Duplicate index directive", it->line);
+
 	requireToken(it, end, TOKEN_WORD, "Index directive require at least one file.");
 
 	while (it != end && it->type == TOKEN_WORD)
@@ -163,6 +177,10 @@ void	ConfigParser::handleIndex(iter &it, iter end, AConfig &config)
 
 void	ConfigParser::handleClientMax(iter &it, iter end, AConfig &config)
 {
+	if (config.isClientMaxBodySizeAssigned())
+		throw ErrorException("Duplicate client_max_body_size directive", it->line);
+	config.setAssignedClientMaxBodySize();
+
 	requireToken(it, end, TOKEN_WORD, "client_max_body_size directive require a value.");
 	if (it->value.empty())
 		throw ErrorException("Empty client_max_body_size", it->line);
@@ -212,8 +230,14 @@ void	ConfigParser::handleErrorPage(iter &it, iter end, AConfig &config)
 	while (it != end && it->type == TOKEN_WORD && isNumber(it->value))
 	{
 		int code = std::atoi(it->value.c_str());
+
 		if (code < 300 || code > 599)
 			throw ErrorException("Invalid error code: " + it->value, it->line);
+
+		if (std::count(codes.begin(), codes.end(), code) > 0
+			|| config.getErrorPage().find(code) != config.getErrorPage().end())
+			throw ErrorException("Duplicate code found in error_code directive", it->line);
+		
 		codes.push_back(code);
 		++it;
 	}
@@ -238,6 +262,9 @@ void	ConfigParser::handleErrorPage(iter &it, iter end, AConfig &config)
 
 void	ConfigParser::handleRoot(iter &it, iter end, AConfig &config)
 {
+	if (!config.getRoot().empty())
+		throw ErrorException("Duplicate root directive", it->line);
+
 	requireToken(it, end, TOKEN_WORD, "root directive requires a path.");
 
 	config.setRoot(it->value);
