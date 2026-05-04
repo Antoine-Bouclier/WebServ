@@ -3,6 +3,6 @@
 
 #include "ConfigParser.hpp"
 
-bool	check_required(const ConfigParser& parsed);
+bool	check_required(ConfigParser& parsed);
 
 #endif

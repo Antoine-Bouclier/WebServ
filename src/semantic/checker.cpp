@@ -71,14 +71,15 @@ static void	check_location_block(const ConfigLocation& location)
 	}
 }
 
-bool	check_required(const ConfigParser& parsed)
+bool	check_required(ConfigParser& parsed)
 {
-	vector<ConfigServer>::const_iterator serv_it = parsed.getServer().begin();
+	vector<ConfigServer>::iterator serv_it = parsed.getServer().begin();
 
 	for (; serv_it != parsed.getServer().end(); serv_it++)
 	{
 
 		check_server_block(*serv_it);
+		serv_it->applyInheritanceToLocations();
 
 		vector<ConfigLocation>::const_iterator locs_it = serv_it->getLocations().begin();
 

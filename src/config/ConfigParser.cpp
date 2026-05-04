@@ -100,6 +100,7 @@ void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 		throw (it != end ? ErrorException("Missing right brace in block.", it->line) : ErrorException("Missing right brace in block."));
 }
 
-const vector<ConfigServer>&	ConfigParser::getServer(void) const {return (_server); }
+vector<ConfigServer>&		ConfigParser::getServer()		{ return (_server); }
+const vector<ConfigServer>&	ConfigParser::getServer() const { return (_server); }
 
 ConfigParser::~ConfigParser() {}

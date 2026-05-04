@@ -21,7 +21,10 @@ public:
 	void	setRoot(const std::string& root);
 	void	addIndex(const std::string& index);
 	void	addErrorPage(const int code, const std::string& page);
+
 	void	setAssignedClientMaxBodySize(void);
+	void	setIndex(const std::vector<std::string>& index);
+	void	setErrorPages(const std::map<int, std::string>& error_pages);
 
 	/* -- Getters -- */
 	const std::string&					getRoot(void) const;

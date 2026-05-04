@@ -29,6 +29,9 @@ class ConfigServer : public AConfig
 		std::string							getHost(void) const;
 		const std::vector<std::string>&		getServerNames(void) const;
 		const std::vector<ConfigLocation>&	getLocations(void) const;
+
+		/* -- Methods -- */
+		void	applyInheritanceToLocations(void);
 };
 
 #endif

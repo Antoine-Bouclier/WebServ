@@ -17,7 +17,8 @@ class ConfigParser
 		ConfigParser();
 		~ConfigParser();
 
-		const std::vector<ConfigServer>& getServer(void) const;
+		std::vector<ConfigServer>&			getServer(void);
+		const std::vector<ConfigServer>&	getServer(void) const;
 		
 		/* -- Main function -- */
 		void	parseConfig(const char* path);
@@ -41,7 +42,6 @@ class ConfigParser
 		
 		/* -- Handlers location -- */
 		void		handleCgi(iter &it, iter end, AConfig &config);
-		void		handlePath(iter &it, iter end, AConfig &config);
 		void		handleMethods(iter &it, iter end, AConfig &config);
 		void		handleAutoindex(iter &it, iter end, AConfig &config);
 		void		handleUploadPath(iter &it, iter end, AConfig &config);
