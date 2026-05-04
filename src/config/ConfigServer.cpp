@@ -1,10 +1,9 @@
-#include "ConfigServer.hpp"
+#include "core/Exception.hpp"
+#include "config/ConfigServer.hpp"
 
-ConfigServer::ConfigServer() : _port(-1)
-{}
+ConfigServer::ConfigServer() : _port(-1) {}
 
-ConfigServer::~ConfigServer()
-{}
+ConfigServer::~ConfigServer() {}
 
 /* -- Setter -- */
 void	ConfigServer::setPort(int port)							{ _port = port; }

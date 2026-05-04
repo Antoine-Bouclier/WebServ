@@ -1,7 +1,9 @@
 #ifndef ACONFIG_HPP
 #define ACONFIG_HPP
 
-#include "WebServ.hpp"
+#include <map>
+#include <vector>
+#include <string>
 
 class AConfig
 {

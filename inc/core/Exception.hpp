@@ -1,8 +1,8 @@
 #ifndef EXCEPTION_HPP
 #define EXCEPTION_HPP
 
+#include <sstream>
 #include <exception>
-#include <iostream>
 
 class ErrorException : public std::exception
 {

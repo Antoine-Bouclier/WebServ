@@ -1,13 +1,8 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <exception>
-#include "Lexer.hpp"
-#include "WebServ.hpp"
-#include "ConfigServer.hpp"
+#include "parser/Lexer.hpp"
+#include "config/ConfigServer.hpp"
 
 typedef typename std::vector<Token>::iterator iter;
 

@@ -1,4 +1,4 @@
-#include "ConfigLocation.hpp"
+#include "config/ConfigLocation.hpp"
 
 using std::map;
 using std::vector;

@@ -1,4 +1,11 @@
-#include "server.hpp"
+#include <netdb.h>		// getaddrinfo
+#include <cstring>		// std::memset
+#include <unistd.h>
+#include <iostream>
+#include <stdexcept>	// std::runtime_error
+#include <sys/socket.h>
+
+#include "server/Server.hpp"
 
 in_addr_t resolveHost(const std::string& host)
 {

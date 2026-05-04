@@ -1,7 +1,24 @@
 #ifndef LEXER_HPP
 #define LEXER_HPP
 
-#include "WebServ.hpp"
+#include <vector>
+#include <string>
+
+enum TokenType
+{
+	TOKEN_WORD,
+	TOKEN_LBRACE,
+	TOKEN_RBRACE,
+	TOKEN_SEMICOLON,
+	TOKEN_EOF
+};
+
+struct Token
+{
+	TokenType		type;
+	std::string		value;
+	unsigned int	line;
+};
 
 class Lexer
 {
@@ -24,7 +41,7 @@ private:
 		/* -- Private methods -- */
 		bool		isSpecial(char);
 		TokenType	getTokenType(char);
-		void		addToken(Token&, const uint, TokenType);
+		void		addToken(Token&, const unsigned int, TokenType);
 };
 
 #endif

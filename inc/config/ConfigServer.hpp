@@ -1,9 +1,7 @@
 #ifndef CONFIGSERVER_HPP
 #define CONFIGSERVER_HPP
 
-#include "WebServ.hpp"
-#include "AConfig.hpp"
-#include "ConfigLocation.hpp"
+#include "config/ConfigLocation.hpp"
 
 class ConfigServer : public AConfig
 {

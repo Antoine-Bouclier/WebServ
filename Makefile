@@ -25,23 +25,29 @@ D_INC		=	inc/
 
 D_BIN		=	.bin/
 
-vpath %.cpp $(CURDIR):$(D_SRC):$(D_SRC)config:$(D_SRC)semantic:$(D_SRC)server
+SRC_DIRS	=	$(D_SRC)		\
+				$(CURDIR)		\
+				$(D_SRC)config	\
+				$(D_SRC)parser	\
+				$(D_SRC)server
+
+vpath %.cpp $(SRC_DIRS)
 
 # file lists
-SRCS		=	main.cpp			\
-				Lexer.cpp			\
-				checker.cpp			\
-				AConfig.cpp			\
-				ConfigParser.cpp	\
-				ConfigServer.cpp	\
-				create_server.cpp	\
-				ConfigLocation.cpp	\
+SRCS		=	main.cpp				\
+				Lexer.cpp				\
+				Server.cpp				\
+				AConfig.cpp				\
+				ConfigParser.cpp		\
+				ConfigServer.cpp		\
+				ConfigLocation.cpp		\
+				ConfigNormalizer.cpp	\
 				ConfigParserHandlers.cpp
 
 OBJS		=	$(addprefix $(D_BIN), $(SRCS:.cpp=.o))
 DEPS		=	$(addprefix $(D_BIN), $(SRCS:.cpp=.d))
 
-INC			=	-I$(D_INC) -I$(D_INC)config/ -I$(D_INC)server -I$(D_INC)core
+INC			=	-I$(D_INC)
 
 # ╭━━━━━━━━━━━━══════════╕出 ❖ RULES ❖ 力╒═══════════━━━━━━━━━━━━╮ #
 

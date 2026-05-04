@@ -1,10 +1,18 @@
 #include <algorithm>
-#include "ConfigParser.hpp"
+#include "core/Exception.hpp"
+#include "parser/ConfigParser.hpp"
 
-static bool				isNumber(const std::string& s);
-static void				requireToken(iter it, iter end, TokenType type, const std::string& msg);
+static bool	isNumber(const std::string&);
+static void	requireToken(iter, iter, TokenType, const std::string&);
 
-/* -- Location handlers -- */
+/*
+
+	-- LOCATION HANDLERS --
+
+	All the handlers that refers to location blocks only
+
+*/
+
 void	ConfigParser::handleAutoindex(iter &it, iter end, AConfig &config)
 {
 	ConfigLocation& loc = require<ConfigLocation>(it, config, "autoindex");
@@ -87,7 +95,15 @@ void	ConfigParser::handleCgi(iter &it, iter end, AConfig &config)
 	loc.addCgi(extension, binary_path);
 }
 
-/* -- Server handlers -- */
+
+/*
+
+	-- SERVER HANDLERS --
+
+	All the handlers that refers to server blocks only
+
+*/
+
 void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 {
 	requireToken(it, end, TOKEN_WORD, "listen directive requires a Host.");
@@ -160,7 +176,15 @@ void	ConfigParser::handleLocation(iter &it, iter end, AConfig &config)
 	server.addLocation(new_loc);
 }
 
-/* -- AConfig handlers -- */
+/*
+
+	-- ACONFIG HANDLERS --
+
+	All the handlers that refers to location and server blocks
+
+*/
+
+
 void	ConfigParser::handleIndex(iter &it, iter end, AConfig &config)
 {
 /* Uncomment to restrict index directive's duplicates */
@@ -274,7 +298,14 @@ void	ConfigParser::handleRoot(iter &it, iter end, AConfig &config)
 	requireToken(it, end, TOKEN_SEMICOLON, "Missing semicolon ';' after root directive.");
 }
 
-/* -- Wrappers (utils) -- */
+/*
+
+	-- WRAPPERS (utils) --
+
+	Aims to simplify the code below
+
+*/
+
 static bool isNumber(const std::string& s)
 {
 	return !(s.empty() || s.find_first_not_of("0123456789") != std::string::npos);
@@ -286,6 +317,6 @@ static void requireToken(iter it, iter end, TokenType type, const std::string& m
 		throw (it != end ? ErrorException(msg, it->line) : ErrorException(msg));
 }
 
-/* -- Template specialisation definitions -- */
+/* -- Template specialisation definitions (logs) -- */
 const char* const ConfigParser::ConfigName<ConfigServer>::name = "server";
 const char* const ConfigParser::ConfigName<ConfigLocation>::name = "location";

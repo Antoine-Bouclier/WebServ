@@ -1,13 +1,14 @@
-#include "Lexer.hpp"
+#include <iostream>
+#include "parser/Lexer.hpp"
+
+typedef unsigned int	uint;
+typedef unsigned long	ulong;
 
 Lexer::Lexer() {}
 
 Lexer::Lexer(const Lexer&) {}
 
-Lexer &Lexer::operator=(const Lexer&)
-{
-	return (*this);
-}
+Lexer &Lexer::operator=(const Lexer&) { return (*this); }
 
 Lexer::~Lexer() {}
 
@@ -29,7 +30,7 @@ bool	Lexer::isSpecial(char c)
 	return (c == '{' || c ==  '}' || c ==  ';' || c ==  '\0');
 }
 
-void Lexer::addToken(Token& token, const uint line, TokenType type)
+void Lexer::addToken(Token& token, const unsigned int line, TokenType type)
 {
 	if (token.value.empty())
 		return ;
@@ -42,8 +43,8 @@ void Lexer::addToken(Token& token, const uint line, TokenType type)
 
 std::vector<Token>	Lexer::tokenize(const std::string& config)
 {
-	uint line = 1;
-	Token token;
+	Token	token;
+	uint	line = 1;
 
 	_tokens.clear();
 

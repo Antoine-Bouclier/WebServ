@@ -1,9 +1,9 @@
-#include "parsing.hpp"
-#include "WebServ.hpp"
-#include "ConfigParser.hpp"
-#include "server.hpp"
-
 #include <csignal>
+#include <iostream>
+
+#include "server/Server.hpp"
+#include "parser/ConfigParser.hpp"
+#include "config/ConfigNormalizer.hpp"
 
 volatile sig_atomic_t isAlive = 0;
 

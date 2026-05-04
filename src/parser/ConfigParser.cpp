@@ -1,4 +1,7 @@
-#include "ConfigParser.hpp"
+#include <fstream>			// std::ifstream - file()
+#include <sys/stat.h>		// struct stat
+#include "core/Exception.hpp"
+#include "parser/ConfigParser.hpp"
 
 using std::string;
 using std::vector;
@@ -12,7 +15,7 @@ void	ConfigParser::parseConfig(const char* path)
 		throw	ErrorException("Extension must be <.conf>");
 
 	tokens = _lexer.tokenize(readFile(path));
-	// _lexer.printToken();
+	// _lexer.printToken();						// DEBUG
 
 	if (tokens.empty())
 		throw ErrorException("Empty config file");
