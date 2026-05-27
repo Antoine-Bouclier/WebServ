@@ -1,0 +1,53 @@
+#ifndef HTTPREQUEST_HPP
+#define HTTPREQUEST_HPP
+
+#include <string>
+#include <map>
+#include <vector>
+
+enum HttpParseState
+{
+	STATE_REQUEST_LINE,
+	STATE_HEADERS,
+	STATE_BODY,
+	STATE_READY,
+	STATE_ERROR
+};
+
+class HttpRequest
+{
+	private:
+		/* -- Request Line -- */
+		std::string	_method;
+		std::string	_uri;
+		std::string	_version;
+
+		/* -- Headers -- */
+		std::map<std::string, std::string>	_headers;
+
+		/* -- Body -- */
+		std::vector<char>	_body;
+
+		/* -- Stream Control & Internal State -- */
+		HttpParseState		_state;
+		std::vector<char>	_buffer;
+		size_t				_position_ptr;
+		size_t				_content_length;
+		bool				_is_chunked;
+
+		/* -- Private Parsing Sub-routine -- */
+		void	_parseRequestLine();
+		void	_parseHeaders();
+		void	_parseBody();
+
+	public:
+		HttpRequest();
+		HttpRequest(const HttpRequest& src);
+		HttpRequest& operator=(const HttpRequest& src);
+		~HttpRequest();
+
+		/* -- Main Function -- */
+		void	feed(const char* raw_bytes, size_t bytes_count);
+};
+
+#endif
