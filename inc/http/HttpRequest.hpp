@@ -28,7 +28,7 @@ class HttpRequest
 		/* -- Body -- */
 		std::vector<char>	_body;
 
-		
+		/* -- Stream Control & Internal State -- */
 		HttpParseState		_state;
 		std::vector<char>	_buffer;
 		size_t				_position_ptr;
@@ -36,9 +36,9 @@ class HttpRequest
 		bool				_is_chunked;
 
 		/* -- Private Parsing Sub-routine -- */
-		void	_parseRequestL/* -- Stream Control & Internal State -- */ine();
-		void	_parseHeaders();
-		void	_parseBody();
+		void	parseRequestLine();
+		void	parseHeaders();
+		void	parseBody();
 
 	public:
 		HttpRequest();

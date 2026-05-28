@@ -40,7 +40,38 @@ HttpRequest::~HttpRequest()
 
 }
 
-void	HttpRequest::feed(const char* raw_bytes, size_t bytes_count)
+void	HttpRequest::parseRequestLine()
 {
 
+}
+
+void	HttpRequest::parseHeaders()
+{
+
+}
+
+void	HttpRequest::parseBody()
+{
+
+}
+
+
+void	HttpRequest::feed(const char* raw_bytes, size_t bytes_count)
+{
+	_buffer.insert(_buffer.end(), raw_bytes, raw_bytes + bytes_count);
+	while (_state != STATE_READY)
+	{
+		size_t			old_position = _position_ptr;
+		HttpParseState	old_state = _state;
+
+		if (_state == STATE_REQUEST_LINE)
+			parseRequestLine();
+		else if (_state == STATE_HEADERS)
+			parseHeaders();
+		else if (_state == STATE_BODY)
+			parseBody();
+
+		if (_state == STATE_ERROR || (_state == old_state && _position_ptr == old_position))
+			break;
+	}
 }
