@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <sstream>
 
 enum HttpParseState
 {
@@ -39,6 +41,8 @@ class HttpRequest
 		void	parseRequestLine();
 		void	parseHeaders();
 		void	parseBody();
+
+		void	isValidRequestLine();
 
 	public:
 		HttpRequest();

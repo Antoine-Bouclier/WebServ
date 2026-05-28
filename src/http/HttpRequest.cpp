@@ -42,7 +42,58 @@ HttpRequest::~HttpRequest()
 
 void	HttpRequest::parseRequestLine()
 {
+	std::string	eol = "\r\n";
+	std::vector<char>::iterator	it;
+	it = std::search(_buffer.begin() + _position_ptr, _buffer.end(), eol.begin(), eol.end());
 
+	if (it == _buffer.end())
+		return ;
+
+	std::string	request_line(_buffer.begin() + _position_ptr, it);
+
+	_position_ptr = it - _buffer.begin() + 2;
+	if (std::count(request_line.begin(), request_line.end(), ' ') != 2)
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
+
+	std::stringstream	ss(request_line);
+	std::string extra;
+	
+	ss >> _method >> _uri >> _version;
+	if (!ss || ss >> extra)
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
+
+	isValidRequestLine();
+	if (_state == STATE_ERROR)
+		return ;
+
+	_state = STATE_HEADERS;
+}
+
+void	HttpRequest::isValidRequestLine()
+{
+	if (_method != "GET" && _method != "POST" && _method != "DELETE")
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
+	
+	if (_uri.empty() || _uri[0] != '/')
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
+
+	if (_version != "HTTP/1.1")
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
 }
 
 void	HttpRequest::parseHeaders()
