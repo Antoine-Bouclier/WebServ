@@ -2,3 +2,4 @@ test/
 obj/
 a.out
 webserv
+.vscode/

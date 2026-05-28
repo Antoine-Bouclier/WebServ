@@ -37,7 +37,9 @@ vpath %.cpp $(SRC_DIRS)
 SRCS		=	main.cpp				\
 				Lexer.cpp				\
 				Server.cpp				\
+				Client.cpp				\
 				AConfig.cpp				\
+				Listener.cpp			\
 				ConfigParser.cpp		\
 				ConfigServer.cpp		\
 				ConfigLocation.cpp		\
