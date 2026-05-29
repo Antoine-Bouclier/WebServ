@@ -98,7 +98,28 @@ void	HttpRequest::isValidRequestLine()
 
 void	HttpRequest::parseHeaders()
 {
+	std::vector<char>::iterator	it;
 
+	if (!searchEOL(it))
+		return ;
+
+	std::string	header_line(_buffer.begin() + _position_ptr, it);
+	if (header_line.empty())
+	{
+		_position_ptr += 2;
+		return ;
+	}
+}
+
+bool	HttpRequest::searchEOL(std::vector<char>::iterator& it)
+{
+	std::string	eol = "\r\n";
+	it = std::search(_buffer.begin() + _position_ptr, _buffer.end(), eol.begin(), eol.end());
+
+	if (it == _buffer.end())
+		return (false);
+
+	return (true);
 }
 
 void	HttpRequest::parseBody()

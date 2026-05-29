@@ -43,6 +43,8 @@ class HttpRequest
 		void	parseBody();
 
 		void	isValidRequestLine();
+		
+		bool	searchEOL(std::vector<char>::iterator& it);
 
 	public:
 		HttpRequest();
