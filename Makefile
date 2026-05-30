@@ -38,6 +38,7 @@ SRCS		=	main.cpp				\
 				Lexer.cpp				\
 				Server.cpp				\
 				Client.cpp				\
+				Socket.cpp				\
 				AConfig.cpp				\
 				Listener.cpp			\
 				ConfigParser.cpp		\

@@ -3,7 +3,7 @@
 using std::vector;
 using std::string;
 
-Listener*	getListener(string& host, int& port, vector<Listener>& list)
+Listener*	getListener(const string& host, const int& port, vector<Listener>& list)
 {
 	vector<Listener>::iterator current = list.begin();
 	for (; current != list.end(); current++)
@@ -54,10 +54,13 @@ Listener&	Listener::operator=(const Listener& other)
 	return (*this);
 }
 
+void	Listener::setFd(int fd) { _fd = fd; }
+
+int		Listener::getFd() const { return (_fd); }
 int		Listener::getPort() const { return (_port); }
 string	Listener::getHost() const { return (_host); }
 
-void	Listener::addServer(ConfigServer& server)
+void	Listener::addServer(const ConfigServer& server)
 {
 	_servers.push_back(&server);
 }

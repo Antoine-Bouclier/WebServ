@@ -11,6 +11,9 @@
 #include "server/Listener.hpp"
 #include "config/ConfigServer.hpp"
 
+/* -- Config -- */
+#define LISTEN_BACKLOG 128
+
 /* -- Class -- */
 class	Server
 {
@@ -23,7 +26,8 @@ public:
 
 	Server&	operator=(const Server&);
 
-	bool	setupServer(void);
+	void	setupServer(void);
+	bool	addPollFd(int fd, short events);
 
 private:
 	std::map<int, Client>		_clients;		

@@ -18,10 +18,13 @@ public:
 
 	Listener&	operator=(const Listener&);
 
+	void		setFd(int fd);
+
+	int			getFd(void) const;
 	int			getPort(void) const;
 	std::string	getHost(void) const;
 
-	void		addServer(ConfigServer& server);
+	void		addServer(const ConfigServer& server);
 
 private:
 	int									_fd;
@@ -31,6 +34,6 @@ private:
 };
 
 /* -- Methods -- */
-Listener*	getListener(std::string& host, int& port, std::vector<Listener>& list);
+Listener*	getListener(const std::string& host, const int& port, std::vector<Listener>& list);
 
 #endif

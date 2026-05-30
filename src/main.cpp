@@ -23,16 +23,15 @@ int	main(int argc, char **argv)
 		{
 			parser.parseConfig(argv[1]);
 			check_required(parser);
+
+			Server server(parser.getServer());
+			server.setupServer();
 		}
 		catch(const std::exception& e)
 		{
 			std::cerr << e.what() << '\n';
 			return (1);
 		}
-
-		Server server(parser.getServer());
-		server.setupServer();
-
 	}
 	return (0);
 }
