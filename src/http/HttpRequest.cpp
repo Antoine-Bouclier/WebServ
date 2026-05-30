@@ -42,11 +42,9 @@ HttpRequest::~HttpRequest()
 
 void	HttpRequest::parseRequestLine()
 {
-	std::string	eol = "\r\n";
 	std::vector<char>::iterator	it;
-	it = std::search(_buffer.begin() + _position_ptr, _buffer.end(), eol.begin(), eol.end());
 
-	if (it == _buffer.end())
+	if (!searchEOL(it))
 		return ;
 
 	std::string	request_line(_buffer.begin() + _position_ptr, it);
@@ -99,7 +97,6 @@ void	HttpRequest::isValidRequestLine()
 void	HttpRequest::parseHeaders()
 {
 	std::vector<char>::iterator	it;
-
 	if (!searchEOL(it))
 		return ;
 
@@ -109,6 +106,18 @@ void	HttpRequest::parseHeaders()
 		_position_ptr += 2;
 		return ;
 	}
+
+	size_t	found = header_line.find(':');
+	if (found == std::string::npos)
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
+	
+	std::pair<std::string, std::string>	header(header_line.substr(0, found), header_line.substr(found + 1));
+	_headers.insert(header);
+
+	_position_ptr += header_line.size();
 }
 
 bool	HttpRequest::searchEOL(std::vector<char>::iterator& it)
