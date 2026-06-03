@@ -1,4 +1,4 @@
-#include "HttpRequest.hpp"
+#include "http/HttpRequest.hpp"
 
 HttpRequest::HttpRequest() : _state(STATE_REQUEST_LINE), _position_ptr(0), _content_length(0), _is_chunked(false)
 {
@@ -42,7 +42,7 @@ HttpRequest::~HttpRequest()
 
 void	HttpRequest::parseRequestLine()
 {
-	std::vector<char>::iterator	it;
+	std::vector<char>::iterator	it
 
 	if (!searchEOL(it))
 		return ;
@@ -104,6 +104,10 @@ void	HttpRequest::parseHeaders()
 	if (header_line.empty())
 	{
 		_position_ptr += 2;
+		if (_headers.find("Content-length") != _headers.end())
+			_state = STATE_BODY;
+		else
+			_state = STATE_READY;
 		return ;
 	}
 
@@ -113,11 +117,16 @@ void	HttpRequest::parseHeaders()
 		_state = STATE_ERROR;
 		return ;
 	}
-	
-	std::pair<std::string, std::string>	header(header_line.substr(0, found), header_line.substr(found + 1));
+	std::string key = header_line.substr(0, found);
+	std::string value = header_line.substr(found + 1);
+
+	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
+		value.erase(0, 1);
+
+	std::pair<std::string, std::string> header(key, value);
 	_headers.insert(header);
 
-	_position_ptr += header_line.size();
+	_position_ptr = it - _buffer.begin() + 2;
 }
 
 bool	HttpRequest::searchEOL(std::vector<char>::iterator& it)
