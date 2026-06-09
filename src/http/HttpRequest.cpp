@@ -42,7 +42,7 @@ HttpRequest::~HttpRequest()
 
 void	HttpRequest::parseRequestLine()
 {
-	std::vector<char>::iterator	it
+	std::vector<char>::iterator	it;
 
 	if (!searchEOL(it))
 		return ;
@@ -104,7 +104,7 @@ void	HttpRequest::parseHeaders()
 	if (header_line.empty())
 	{
 		_position_ptr += 2;
-		if (_headers.find("Content-length") != _headers.end())
+		if (_headers.find("Content-length") != _headers.end() || _headers.find("transfert-encoding") != _headers.end())
 			_state = STATE_BODY;
 		else
 			_state = STATE_READY;
@@ -119,6 +119,9 @@ void	HttpRequest::parseHeaders()
 	}
 	std::string key = header_line.substr(0, found);
 	std::string value = header_line.substr(found + 1);
+
+	for (size_t i = 0; i < key.length(); ++i)
+		key[i] = std::tolower(key[i]);
 
 	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
 		value.erase(0, 1);
