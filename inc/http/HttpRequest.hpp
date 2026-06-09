@@ -42,9 +42,11 @@ class HttpRequest
 		void	parseHeaders();
 		void	parseBody();
 
+		/* -- Utils Function -- */
 		void	isValidRequestLine();
-		
 		bool	searchEOL(std::vector<char>::iterator& it);
+		void	parseBodyContentLength();
+		void	parseBodyTransfertEncoding();
 
 	public:
 		HttpRequest();
@@ -54,6 +56,12 @@ class HttpRequest
 
 		/* -- Main Function -- */
 		void	feed(const char* raw_bytes, size_t bytes_count);
+
+		/* -- Getters -- */
+		const HttpParseState&	getState() const;
+		const std::string&	getMethod() const;
+		const std::string&	getUri() const;
+		const std::string&	getVersion() const;
 };
 
 #endif
