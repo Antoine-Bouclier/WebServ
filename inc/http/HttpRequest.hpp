@@ -1,10 +1,10 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#include <string>
-#include <map>
-#include <vector>
-#include <algorithm>
+#include <string>		// std::string
+#include <map>			// std::map
+#include <vector>		// std::vector
+#include <algorithm>	// std::min()
 #include <sstream>		// std::istringstream()
 #include <iostream>		// std::hex()
 
@@ -53,6 +53,7 @@ class HttpRequest
 		void	parseBodyTransferEncoding();
 
 	public:
+		/* Canonical Form */
 		HttpRequest();
 		HttpRequest(const HttpRequest& src);
 		HttpRequest& operator=(const HttpRequest& src);
@@ -63,9 +64,9 @@ class HttpRequest
 
 		/* -- Getters -- */
 		const HttpParseState&	getState() const;
-		const std::string&	getMethod() const;
-		const std::string&	getUri() const;
-		const std::string&	getVersion() const;
+		const std::string&		getMethod() const;
+		const std::string&		getUri() const;
+		const std::string&		getVersion() const;
 };
 
 #endif
