@@ -8,6 +8,8 @@ class ConfigLocation : public AConfig
 public:
 	ConfigLocation();
 	~ConfigLocation();
+	ConfigLocation(const ConfigLocation& src);
+	ConfigLocation&	operator=(const ConfigLocation& src);
 
 	void	clearMethods(void);
 

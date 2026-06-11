@@ -13,10 +13,13 @@ class ConfigServer : public AConfig
 		std::vector<std::string>	_server_names;
 
 	public:
+		/* -- Canonical Form -- */
 		ConfigServer();
 		~ConfigServer();
+		ConfigServer(const ConfigServer& src);
+		ConfigServer&	operator=(const ConfigServer& src);
 
-		/* -- Setter -- */
+		/* -- Setters -- */
 		void	setPort(int port);
 		void	setHost(const std::string& host);
 		void	addServerName(const std::string& name);

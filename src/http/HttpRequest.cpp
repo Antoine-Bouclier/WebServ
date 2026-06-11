@@ -1,9 +1,11 @@
 #include "http/HttpRequest.hpp"
 
-HttpRequest::HttpRequest() : _state(STATE_REQUEST_LINE), _position_ptr(0), _content_length(0), _current_chunk_size(0), _is_chunked(false), _reading_chunk_headers(false)
-{
-
-}
+HttpRequest::HttpRequest()
+	:	_state(STATE_REQUEST_LINE),
+		_position_ptr(0), _content_length(0),
+		_current_chunk_size(0),
+		_is_chunked(false),
+		_reading_chunk_headers(false){}
 
 HttpRequest::HttpRequest(const HttpRequest& src)
 {
@@ -37,18 +39,20 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& src)
 	return (*this);
 }
 
-HttpRequest::~HttpRequest()
-{
+HttpRequest::~HttpRequest(){}
 
-}
+/* ------------- */
+/* -- GETTERS -- */
+/* ------------- */
 
-/* -- Getters -- */
 const HttpParseState&	HttpRequest::getState() const{ return (_state); }
 const std::string&		HttpRequest::getMethod() const{ return (_method); }
 const std::string&		HttpRequest::getUri() const{ return (_uri); }
 const std::string&		HttpRequest::getVersion() const{ return (_version); }
 
-/* -- Utils Function -- */
+/* -------------------- */
+/* -- UTILS METHODS -- */
+/* -------------------- */
 
 /**
  * @brief Validates the syntactical conformity of the HTTP Request-Line.
@@ -181,8 +185,9 @@ void	HttpRequest::parseBodyTransferEncoding()
 	}
 }
 
-
-/* -- Parsing Sub-routine -- */
+/* ------------------------- */
+/* -- PARSING SUB-ROUTINE -- */
+/* ------------------------- */
 
 /**
  * @brief Extracts and parses the HTTP Request-Line.
@@ -288,8 +293,9 @@ void	HttpRequest::parseBody()
 	else
 		_state = STATE_READY;
 }
-
-/* -- Main Function -- */
+/* ------------------ */
+/* -- MAIN METHOD -- */
+/* ------------------ */
 
 /**
  * @brief Feeds raw byte chunks into the parser and triggers the state machine.
