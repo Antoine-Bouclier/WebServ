@@ -1,6 +1,6 @@
 #include "http/HttpRequest.hpp"
 
-HttpRequest::HttpRequest() : _state(STATE_REQUEST_LINE), _position_ptr(0), _content_length(0), _is_chunked(false)
+HttpRequest::HttpRequest() : _state(STATE_REQUEST_LINE), _position_ptr(0), _content_length(0), _current_chunk_size(0), _is_chunked(false), _reading_chunk_headers(false)
 {
 
 }
@@ -30,7 +30,9 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& src)
 		_buffer = src._buffer;
 		_position_ptr = src._position_ptr;
 		_content_length = src._content_length;
+		_current_chunk_size = src._current_chunk_size;
 		_is_chunked = src._is_chunked;
+		_reading_chunk_headers = src._reading_chunk_headers;
 	}
 	return (*this);
 }
@@ -100,27 +102,83 @@ bool	HttpRequest::searchEOL(std::vector<char>::iterator& it)
 	return (true);
 }
 
+bool	HttpRequest::skipEOL()
+{
+	if (_buffer.size() - _position_ptr < 2)
+		return (false);
+	if (_buffer[_position_ptr] != '\r' || _buffer[_position_ptr + 1] != '\n')
+	{
+		_state = STATE_ERROR;
+		return (false);
+	}
+	_position_ptr += 2;
+	return (true);
+}
+
 void	HttpRequest::parseBodyContentLength()
 {
 	std::istringstream	iss(_headers["content-length"]);
-	size_t	length;
-	iss >> length;
+	iss >> _content_length;
 
-	size_t	remaining = length - _body.size();
-	size_t	size_content = _buffer.size() - _position_ptr;
+	size_t	to_copy = std::min(_content_length - _body.size(), _buffer.size() - _position_ptr);
 
-	size_t	to_copy = std::min(remaining, size_content);
-	std::vector<char>::iterator	it = _buffer[_position_ptr]
-	_body.insert(_position_ptr, ,);
-	for (size_t i = 0; i < to_copy; ++i)
-	{
-		_body.push_back(_buffer[_position_ptr + i]);
-	}
+	std::vector<char>::iterator	it = _buffer.begin() + _position_ptr;
+	_body.insert(_body.end(), it, it + to_copy);
+
+	_position_ptr += to_copy;
+
+	if (_body.size() == _content_length)
+		_state = STATE_READY;
 }
 
-void	HttpRequest::parseBodyTransfertEncoding()
+void	HttpRequest::parseBodyTransferEncoding()
 {
-	_is_chunked = true;
+	if (_reading_chunk_headers)
+	{
+		std::vector<char>::iterator	it;
+	
+		if (!searchEOL(it))
+			return ;
+		
+		std::string			hex(_buffer.begin() + _position_ptr, it);
+		std::istringstream	iss(hex);
+	
+		iss >> std::hex >> _current_chunk_size;
+	
+		if (_current_chunk_size == 0)
+		{
+			if (_buffer.end() - it < 4)
+				return ;
+			
+			if (*(it + 2) != '\r' || *(it + 3) != '\n')
+			{
+				_state = STATE_ERROR;
+				return ;
+			}
+			_position_ptr = (it - _buffer.begin()) + 4;
+			_state = STATE_READY;
+			return ;
+		}
+		_position_ptr = it - _buffer.begin() + 2;
+		_reading_chunk_headers = false;
+	}
+	else
+	{
+		size_t	to_copy = std::min(_buffer.size() - _position_ptr, _current_chunk_size);
+
+		std::vector<char>::iterator	it = _buffer.begin() + _position_ptr;
+		_body.insert(_body.end(), it, it + to_copy);
+
+		_position_ptr += to_copy;
+		_current_chunk_size -= to_copy;
+
+		if (_current_chunk_size == 0)
+		{
+			if (!skipEOL())
+				return ;
+			_reading_chunk_headers = true;
+		}
+	}
 }
 
 
@@ -216,12 +274,15 @@ void	HttpRequest::parseHeaders()
 	_headers.insert(header);
 
 	_position_ptr = it - _buffer.begin() + 2;
+
+	if (_headers.find("transfer-encoding") != _headers.end() && _headers["transfer-encoding"] == "chunked")
+		_is_chunked = true;
 }
 
 void	HttpRequest::parseBody()
 {
-	if (_headers.find("transfer-encoding") != _headers.end())
-		parseBodyTransfertEncoding();
+	if (_is_chunked)
+		parseBodyTransferEncoding();
 	else if (_headers.find("content-length") != _headers.end())
 		parseBodyContentLength();
 	else

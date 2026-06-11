@@ -5,7 +5,8 @@
 #include <map>
 #include <vector>
 #include <algorithm>
-#include <sstream>
+#include <sstream>		// std::istringstream()
+#include <iostream>		// std::hex()
 
 enum HttpParseState
 {
@@ -35,7 +36,9 @@ class HttpRequest
 		std::vector<char>	_buffer;
 		size_t				_position_ptr;
 		size_t				_content_length;
+		size_t				_current_chunk_size;
 		bool				_is_chunked;
+		bool				_reading_chunk_headers;
 
 		/* -- Private Parsing Sub-routine -- */
 		void	parseRequestLine();
@@ -45,8 +48,9 @@ class HttpRequest
 		/* -- Utils Function -- */
 		void	isValidRequestLine();
 		bool	searchEOL(std::vector<char>::iterator& it);
+		bool	skipEOL();
 		void	parseBodyContentLength();
-		void	parseBodyTransfertEncoding();
+		void	parseBodyTransferEncoding();
 
 	public:
 		HttpRequest();
