@@ -4,11 +4,23 @@
 typedef unsigned int	uint;
 typedef unsigned long	ulong;
 
+/* -------------------- */
+/* -- CANONICAL FORM -- */
+/* -------------------- */
+
 Lexer::Lexer() {}
 
-Lexer::Lexer(const Lexer&) {}
+Lexer::Lexer(const Lexer& src)
+{
+	*this = src;
+}
 
-Lexer &Lexer::operator=(const Lexer&) { return (*this); }
+Lexer &Lexer::operator=(const Lexer& src)
+{
+	if (this != &src)
+		_tokens = src._tokens;
+	return (*this);
+}
 
 Lexer::~Lexer() {}
 

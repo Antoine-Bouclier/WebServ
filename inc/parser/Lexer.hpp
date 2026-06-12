@@ -23,7 +23,7 @@ struct Token
 class Lexer
 {
 public:
-	/* -- Constructors -- */
+	/* -- Canonical Form -- */
 	Lexer();
 	Lexer(const Lexer&);
 	Lexer &operator=(const Lexer&);
