@@ -10,10 +10,15 @@ class	Client
 public:
 	Client();
 	Client(const Client&);
+	Client(int clientFd, int listenerFd);
 
 	~Client();
 
 	Client&	operator=(const Client&);
+
+	const std::string&	getReadBuffer(void) const;
+	bool				hasCompleteHeader(void) const;
+	void				appendReadBuffer(const char* data, size_t size);
 
 private:
 	int			_fd;

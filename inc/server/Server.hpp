@@ -26,14 +26,22 @@ public:
 
 	Server&	operator=(const Server&);
 
+	void	run(void);
 	void	setupServer(void);
+	bool	isListenerFd(int fd) const;
 	bool	addPollFd(int fd, short events);
+
+	void	closeClient(int fd);
+	void	handleClientRead(int clientFd);
+	void	handleClientConnection(int listenerFd);
 
 private:
 	std::map<int, Client>		_clients;		
 	std::vector<ConfigServer>	_servers;
 	std::vector<pollfd>			_poll_fds;
 	std::vector<Listener>		_listeners;
+
+	bool						_isAlive;
 };
 
 #endif

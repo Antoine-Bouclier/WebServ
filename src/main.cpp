@@ -1,17 +1,8 @@
-#include <csignal>
 #include <iostream>
 
 #include "server/Server.hpp"
 #include "parser/ConfigParser.hpp"
 #include "config/ConfigNormalizer.hpp"
-
-volatile sig_atomic_t isAlive = 0;
-
-void sigint_handler(int signal)
-{
-	(void)signal;
-	isAlive = 0;
-}
 
 int	main(int argc, char **argv)
 {
@@ -26,6 +17,7 @@ int	main(int argc, char **argv)
 
 			Server server(parser.getServer());
 			server.setupServer();
+			server.run();
 		}
 		catch(const std::exception& e)
 		{

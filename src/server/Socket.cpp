@@ -57,8 +57,9 @@ Used to prevent accept(), recv() and send() from blocking the server.
 */
 void	setNonBlocking(int fd)
 {
-	int current_fd_flags = fcntl(fd, F_GETFL, 0);
-	fcntl(fd, F_SETFL, current_fd_flags | O_NONBLOCK);
+	// int current_fd_flags = fcntl(fd, F_GETFL, 0);
+	// fcntl(fd, F_SETFL, current_fd_flags | O_NONBLOCK);
+	fcntl(fd, F_SETFL, O_NONBLOCK);
 }
 
 /*
