@@ -1,36 +1,11 @@
 #include "core/Exception.hpp"
 #include "config/ConfigServer.hpp"
 
-/* -------------------- */
-/* -- CANONICAL FORM -- */
-/* -------------------- */
-
 ConfigServer::ConfigServer() : _port(-1) {}
 
 ConfigServer::~ConfigServer() {}
 
-ConfigServer::ConfigServer(const ConfigServer& src)
-{
-	*this = src;
-}
-
-ConfigServer&	ConfigServer::operator=(const ConfigServer& src)
-{
-	if (this != &src)
-	{
-		_port = src._port;
-		_host = src._host;
-		_locations = src._locations;
-		_redirection = src._redirection;
-		_server_names = src._server_names;
-	}
-	return (*this);
-}
-
-/* ------------- */
-/* -- SETTERS -- */
-/* ------------- */
-
+/* -- Setter -- */
 void	ConfigServer::setPort(int port)							{ _port = port; }
 void	ConfigServer::setHost(const std::string& host)			{ _host = host; }
 void	ConfigServer::addServerName(const std::string& name)	{ _server_names.push_back(name); }
@@ -46,10 +21,7 @@ void	ConfigServer::addLocation(const ConfigLocation& loc)
 }
 
 
-/* ------------- */
-/* -- GETTERS -- */
-/* ------------- */
-
+/* -- Getters -- */
 int									ConfigServer::getPort() const			{ return (_port); }
 std::string							ConfigServer::getHost() const			{ return (_host); }
 const std::vector<ConfigLocation>&	ConfigServer::getLocations() const		{ return (_locations); }
