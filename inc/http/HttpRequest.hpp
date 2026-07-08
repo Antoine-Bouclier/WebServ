@@ -37,6 +37,7 @@ class HttpRequest
 		size_t				_position_ptr;
 		size_t				_content_length;
 		size_t				_current_chunk_size;
+		bool				_has_duplicate_host;
 		bool				_is_chunked;
 		bool				_reading_chunk_headers;
 
@@ -46,7 +47,7 @@ class HttpRequest
 		void	parseBody();
 
 		/* -- Utils Function -- */
-		void	isValidRequestLine();
+		void	isValidURI();
 		bool	searchEOL(std::vector<char>::iterator& it);
 		bool	skipEOL();
 		void	parseBodyContentLength();
@@ -64,9 +65,14 @@ class HttpRequest
 
 		/* -- Getters -- */
 		const HttpParseState&	getState() const;
+
+		/* -- Request Line Getters -- */
 		const std::string&		getMethod() const;
 		const std::string&		getUri() const;
 		const std::string&		getVersion() const;
+
+		/* -- Headers Getter -- */
+		const std::map<std::string, std::string>&	getheaders() const;
 };
 
 #endif
