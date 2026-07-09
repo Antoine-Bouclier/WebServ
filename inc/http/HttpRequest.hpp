@@ -12,6 +12,7 @@ enum HttpParseState
 {
 	STATE_REQUEST_LINE,
 	STATE_HEADERS,
+	STATE_HEADERS_DONE,
 	STATE_BODY,
 	STATE_READY,
 	STATE_ERROR
@@ -52,6 +53,7 @@ class HttpRequest
 		bool	skipEOL();
 		void	parseBodyContentLength();
 		void	parseBodyTransferEncoding();
+		void	resumeParsing();
 
 	public:
 		/* Canonical Form */

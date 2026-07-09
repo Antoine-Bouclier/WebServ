@@ -9,7 +9,7 @@ RequestValidator::~RequestValidator()
 }
 
 /* -- Main Method -- */
-HttpStatusCode	RequestValidator::validate(const HttpRequest& request)
+HttpStatusCode	RequestValidator::validate(const HttpRequest& request, const AConfig &config)
 {
 	HttpStatusCode	status;
 
@@ -20,7 +20,7 @@ HttpStatusCode	RequestValidator::validate(const HttpRequest& request)
 	if (status != OK)
 		return (status);
 	
-	status = isValidheaders(request);
+	status = isValidheaders(request, config);
 	if (status != OK)
 		return (status);
 
@@ -40,14 +40,15 @@ HttpStatusCode	RequestValidator::isValidRequestLine(const HttpRequest& request)
 	return (OK);
 }
 
-HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request)
+HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request, const AConfig& config)
 {
+	HttpStatusCode	status;
 	std::map<std::string, std::string>				headers = request.getheaders();
 	std::map<std::string, std::string>::iterator	found;
 	
-	found = headers.find("host");
-	if (found == headers.end())
-		return (BAD_REQUEST);
+	status = checkHost(headers);
+	if (status != OK)
+		return (status);
 	
 	if (request.getMethod() == "POST")
 	{
@@ -55,7 +56,9 @@ HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request)
 			return (LENGTH_REQUIRED);
 		else if (headers.find("content-length") != headers.end())
 		{
-			
+			status = checkContentLength(headers["content-length"], config.getClientMaxBody());
+			if (status != OK)
+				return (status);
 		}
 	}
 }
@@ -63,4 +66,37 @@ HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request)
 HttpStatusCode	RequestValidator::isValidBody(const HttpRequest& request)
 {
 
+}
+
+/* -- Utils Header Methods -- */
+HttpStatusCode	RequestValidator::checkHost(const std::map<std::string, std::string>& headers)
+{
+	std::map<std::string, std::string>::const_iterator	it = headers.find("host");
+
+	if (it == headers.end())
+		return (BAD_REQUEST);
+	else if (it->second.empty())
+		return (BAD_REQUEST);
+	return (OK);
+}
+
+HttpStatusCode	RequestValidator::checkContentLength(const std::string& length_str, size_t max_body_size)
+{
+	if (length_str.empty())
+		return (BAD_REQUEST);
+
+	for (size_t i = 0; i < length_str.size(); i++)
+	{
+		if (!isdigit(length_str[i]))
+			return (BAD_REQUEST);
+	}
+
+	size_t	content_length;
+	std::istringstream	iss(length_str);
+	iss >> content_length;
+	if (iss.fail())
+		return (PAYLOAD_TOO_LARGE);
+	else if (content_length > max_body_size)
+		return (PAYLOAD_TOO_LARGE);
+	return (OK);
 }

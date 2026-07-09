@@ -180,6 +180,14 @@ void	HttpRequest::parseBodyTransferEncoding()
 	}
 }
 
+void	HttpRequest::resumeParsing()
+{
+	if (_headers.find("content-length") != _headers.end() || _headers.find("transfer-encoding") != _headers.end())
+		_state = STATE_BODY;
+	else
+		_state = STATE_READY;
+}
+
 /* ------------------------- */
 /* -- PARSING SUB-ROUTINE -- */
 /* ------------------------- */
@@ -248,10 +256,7 @@ void	HttpRequest::parseHeaders()
 	if (header_line.empty())
 	{
 		_position_ptr += 2;
-		if (_headers.find("content-length") != _headers.end() || _headers.find("transfer-encoding") != _headers.end())
-			_state = STATE_BODY;
-		else
-			_state = STATE_READY;
+		_state = STATE_HEADERS_DONE;
 		return ;
 	}
 
@@ -270,7 +275,7 @@ void	HttpRequest::parseHeaders()
 	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
 		value.erase(0, 1);
 
-	if (key == "host" && _headers.count(key) > 0)
+	if ((key == "host" || key == "content-length") && _headers.count(key) > 0)
 	{
 		_state = STATE_ERROR;
 		return ;
@@ -311,7 +316,7 @@ void	HttpRequest::parseBody()
 void	HttpRequest::feed(const char* raw_bytes, size_t bytes_count)
 {
 	_buffer.insert(_buffer.end(), raw_bytes, raw_bytes + bytes_count);
-	while (_state != STATE_READY)
+	while (_state != STATE_READY && _state != STATE_HEADERS_DONE)
 	{
 		size_t			old_position = _position_ptr;
 		HttpParseState	old_state = _state;
