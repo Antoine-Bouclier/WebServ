@@ -43,24 +43,35 @@ HttpStatusCode	RequestValidator::isValidRequestLine(const HttpRequest& request)
 HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request, const AConfig& config)
 {
 	HttpStatusCode	status;
-	std::map<std::string, std::string>				headers = request.getheaders();
-	std::map<std::string, std::string>::iterator	found;
+	const std::map<std::string, std::string>&			headers = request.getheaders();
+	std::map<std::string, std::string>::const_iterator	content_length;
+	std::map<std::string, std::string>::const_iterator	transfer_encoding;
 	
 	status = checkHost(headers);
 	if (status != OK)
 		return (status);
-	
+
+	content_length = headers.find("content-length");
+	transfer_encoding = headers.find("transfer-encoding");
+	if (content_length != headers.end() && transfer_encoding != headers.end())
+		return (BAD_REQUEST);
+	else if (content_length != headers.end())
+	{
+		status = checkContentLength(content_length->second, config.getClientMaxBody());
+		if (status != OK)
+			return (status);
+	}
+	if (transfer_encoding != headers.end())
+	{
+		if (transfer_encoding->second != "chunked")
+			return (NOT_IMPLEMENTED);
+	}
 	if (request.getMethod() == "POST")
 	{
-		if (headers.find("content-length") == headers.end() && headers.find("transfer-encoding") == headers.end())
+		if (content_length == headers.end() && transfer_encoding == headers.end())
 			return (LENGTH_REQUIRED);
-		else if (headers.find("content-length") != headers.end())
-		{
-			status = checkContentLength(headers["content-length"], config.getClientMaxBody());
-			if (status != OK)
-				return (status);
-		}
 	}
+	return (OK);
 }
 
 HttpStatusCode	RequestValidator::isValidBody(const HttpRequest& request)
