@@ -4,6 +4,7 @@ HttpRequest::HttpRequest()
 	:	_state(STATE_REQUEST_LINE),
 		_position_ptr(0), _content_length(0),
 		_current_chunk_size(0),
+		_has_duplicate_host(false),
 		_is_chunked(false),
 		_reading_chunk_headers(false){}
 
@@ -33,6 +34,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& src)
 		_position_ptr = src._position_ptr;
 		_content_length = src._content_length;
 		_current_chunk_size = src._current_chunk_size;
+		_has_duplicate_host = src._has_duplicate_host;
 		_is_chunked = src._is_chunked;
 		_reading_chunk_headers = src._reading_chunk_headers;
 	}
@@ -46,9 +48,14 @@ HttpRequest::~HttpRequest(){}
 /* ------------- */
 
 const HttpParseState&	HttpRequest::getState() const{ return (_state); }
+
+/* -- Request Line Getters -- */
 const std::string&		HttpRequest::getMethod() const{ return (_method); }
 const std::string&		HttpRequest::getUri() const{ return (_uri); }
 const std::string&		HttpRequest::getVersion() const{ return (_version); }
+
+/* -- Headers Getter -- */
+const std::map<std::string, std::string>&	HttpRequest::getheaders() const{ return (_headers); }
 
 /* -------------------- */
 /* -- UTILS METHODS -- */
@@ -64,21 +71,9 @@ const std::string&		HttpRequest::getVersion() const{ return (_version); }
  * 
  * If any check fails, the internal state transitions to `STATE_ERROR`.
  */
-void	HttpRequest::isValidRequestLine()
+void	HttpRequest::isValidURI()
 {
-	if (_method != "GET" && _method != "POST" && _method != "DELETE")
-	{
-		_state = STATE_ERROR;
-		return ;
-	}
-	
 	if (_uri.empty() || _uri[0] != '/')
-	{
-		_state = STATE_ERROR;
-		return ;
-	}
-
-	if (_version != "HTTP/1.1")
 	{
 		_state = STATE_ERROR;
 		return ;
@@ -185,6 +180,14 @@ void	HttpRequest::parseBodyTransferEncoding()
 	}
 }
 
+void	HttpRequest::resumeParsing()
+{
+	if (_headers.find("content-length") != _headers.end() || _headers.find("transfer-encoding") != _headers.end())
+		_state = STATE_BODY;
+	else
+		_state = STATE_READY;
+}
+
 /* ------------------------- */
 /* -- PARSING SUB-ROUTINE -- */
 /* ------------------------- */
@@ -225,7 +228,7 @@ void	HttpRequest::parseRequestLine()
 		return ;
 	}
 
-	isValidRequestLine();
+	isValidURI();
 	if (_state == STATE_ERROR)
 		return ;
 
@@ -253,10 +256,7 @@ void	HttpRequest::parseHeaders()
 	if (header_line.empty())
 	{
 		_position_ptr += 2;
-		if (_headers.find("content-length") != _headers.end() || _headers.find("transfer-encoding") != _headers.end())
-			_state = STATE_BODY;
-		else
-			_state = STATE_READY;
+		_state = STATE_HEADERS_DONE;
 		return ;
 	}
 
@@ -274,6 +274,12 @@ void	HttpRequest::parseHeaders()
 
 	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
 		value.erase(0, 1);
+
+	if ((key == "host" || key == "content-length") && _headers.count(key) > 0)
+	{
+		_state = STATE_ERROR;
+		return ;
+	}
 
 	std::pair<std::string, std::string> header(key, value);
 	_headers.insert(header);
@@ -310,7 +316,7 @@ void	HttpRequest::parseBody()
 void	HttpRequest::feed(const char* raw_bytes, size_t bytes_count)
 {
 	_buffer.insert(_buffer.end(), raw_bytes, raw_bytes + bytes_count);
-	while (_state != STATE_READY)
+	while (_state != STATE_READY && _state != STATE_HEADERS_DONE)
 	{
 		size_t			old_position = _position_ptr;
 		HttpParseState	old_state = _state;

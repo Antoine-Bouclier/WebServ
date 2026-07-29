@@ -3,6 +3,8 @@
 
 #include "config/ConfigServer.hpp"
 
+#include <vector>
+
 struct RouteResult
 {
 	const ConfigServer*		server;
@@ -17,6 +19,9 @@ class Router
 	public:
 		Router();
 		~Router();
+
+	/* -- Main Method -- */
+	void	matchRequest();
 };
 
 #endif
