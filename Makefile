@@ -27,6 +27,7 @@ D_BIN		=	.bin/
 
 SRC_DIRS	=	$(D_SRC)		\
 				$(CURDIR)		\
+				$(D_SRC)http	\
 				$(D_SRC)config	\
 				$(D_SRC)parser	\
 				$(D_SRC)server
@@ -41,6 +42,7 @@ SRCS		=	main.cpp				\
 				Socket.cpp				\
 				AConfig.cpp				\
 				Listener.cpp			\
+				HttpRequest.cpp			\
 				ConfigParser.cpp		\
 				ConfigServer.cpp		\
 				ConfigLocation.cpp		\
