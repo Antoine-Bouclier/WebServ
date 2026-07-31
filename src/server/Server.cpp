@@ -188,10 +188,9 @@ bool	Server::addPollFd(int fd, short events)
 
 void Server::processClientRequest(int clientFd, const char* buffer, ssize_t bytes)
 {
-	Client& client = _clients[clientFd];
-	HttpRequest& request = client.getRequest();
-
-	const ConfigServer& defaultConfig = _servers[0]; 
+	Client&				client = _clients[clientFd];
+	HttpRequest&		request = client.getRequest();
+	const ConfigServer&	defaultConfig = _servers[0]; 
 
 	request.feed(buffer, bytes, defaultConfig, defaultConfig.getClientMaxBody());
 
