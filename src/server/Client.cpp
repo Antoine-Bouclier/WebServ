@@ -12,7 +12,7 @@ Client::Client(int clientFd, int listenerFd) : _fd(clientFd), _listener_fd(liste
 Client::Client(const Client& other) :
 	_fd(other._fd),
 	_listener_fd(other._listener_fd),
-	_readBuffer(other._readBuffer),
+	_request(other._request),
 	_writeBuffer(other._writeBuffer)
 {}
 
@@ -24,20 +24,18 @@ Client&	Client::operator=(const Client& other)
 	{
 		_fd = other._fd;
 		_listener_fd = other._listener_fd;
-		_readBuffer = other._readBuffer;
+		_request = other._request;
 		_writeBuffer = other._writeBuffer;
 	}
 	return (*this);
 }
 
-void	Client::appendReadBuffer(const char* data, size_t size)
-{
-	_readBuffer.append(data, size);
-}
+int					Client::getFd() const { return (_fd); }
+int					Client::getListenerFd() const { return (_listener_fd); }
+HttpRequest&		Client::getRequest() { return (_request); }
+const HttpRequest&	Client::getRequest() const { return (_request); }
 
-const string&	Client::getReadBuffer() const { return (_readBuffer); }
-
-bool Client::hasCompleteHeader() const
-{
-	return (_readBuffer.find("\r\n\r\n") != string::npos);
-}
+const std::string&	Client::getWriteBuffer() const { return (_writeBuffer); }
+void				Client::appendWriteBuffer(const std::string& data) { _writeBuffer.append(data); }
+void				Client::clearWriteBuffer() { _writeBuffer.clear(); }
+bool				Client::hasPendingWrite() const { return (!_writeBuffer.empty()); }
