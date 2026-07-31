@@ -1,5 +1,4 @@
 #include "http/RequestValidator.hpp"
-#include "http/HttpRequest.hpp"
 
 RequestValidator::RequestValidator()
 {

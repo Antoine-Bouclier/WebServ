@@ -2,7 +2,7 @@
 #define ROUTER_HPP
 
 #include "config/ConfigServer.hpp"
-#include "http/httpStatusCode.hpp"
+#include "http/HttpStatusCode.hpp"
 #include "http/HttpRequest.hpp"
 
 #include <vector>
