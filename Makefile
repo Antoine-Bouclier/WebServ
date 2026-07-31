@@ -43,6 +43,8 @@ SRCS		=	main.cpp				\
 				AConfig.cpp				\
 				Listener.cpp			\
 				HttpRequest.cpp			\
+				RequestValidator.cpp	\
+				Router.cpp				\
 				ConfigParser.cpp		\
 				ConfigServer.cpp		\
 				ConfigLocation.cpp		\

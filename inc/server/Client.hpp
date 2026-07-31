@@ -3,6 +3,7 @@
 
 /* -- Includes -- */
 #include <string>
+#include "http/HttpRequest.hpp"
 
 /* -- Class -- */
 class	Client
@@ -16,14 +17,21 @@ public:
 
 	Client&	operator=(const Client&);
 
-	const std::string&	getReadBuffer(void) const;
-	bool				hasCompleteHeader(void) const;
-	void				appendReadBuffer(const char* data, size_t size);
+	/*  -- Getters -- */
+	int					getFd() const;
+	int					getListenerFd() const;
+	HttpRequest&		getRequest();
+	const HttpRequest&	getRequest() const;
+
+	const std::string&	getWriteBuffer() const;
+	void				appendWriteBuffer(const std::string& data);
+	void				clearWriteBuffer();
+	bool				hasPendingWrite() const;
 
 private:
 	int			_fd;
 	int			_listener_fd;
-	std::string	_readBuffer;
+	HttpRequest	_request;
 	std::string	_writeBuffer;
 };
 

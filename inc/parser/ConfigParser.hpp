@@ -4,7 +4,7 @@
 #include "parser/Lexer.hpp"
 #include "config/ConfigServer.hpp"
 
-typedef typename std::vector<Token>::iterator iter;
+typedef std::vector<Token>::iterator iter;
 
 class ConfigParser
 {

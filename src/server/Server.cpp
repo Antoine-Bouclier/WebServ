@@ -35,9 +35,9 @@ static int createListeningSocket(const std::string& host, int port)
 }
 
 /***********************
- *                     *
+ *					 *
  * -- CLASS METHODS -- *
- *                     *
+ *					 *
  ***********************/
 
 bool	Server::isListenerFd(int fd) const
@@ -53,70 +53,61 @@ bool	Server::isListenerFd(int fd) const
 
 void Server::handleClientConnection(int listenerFd)
 {
-    sockaddr_in addr;
-    socklen_t addrLen = sizeof(addr);
+	sockaddr_in addr;
+	socklen_t addrLen = sizeof(addr);
 
-    int clientFd = accept(listenerFd, reinterpret_cast<sockaddr*>(&addr), &addrLen);
-    if (clientFd == -1)
-        return;
+	int clientFd = accept(listenerFd, reinterpret_cast<sockaddr*>(&addr), &addrLen);
+	if (clientFd == -1)
+		return;
 
-    setNonBlocking(clientFd);
+	setNonBlocking(clientFd);
 
-    Client client(clientFd, listenerFd);
-    _clients[clientFd] = client;
+	Client client(clientFd, listenerFd);
+	_clients[clientFd] = client;
 
-    addPollFd(clientFd, POLLIN);
+	addPollFd(clientFd, POLLIN);
 }
 
 void Server::closeClient(int fd)
 {
 	close(fd);
-    _clients.erase(fd);
+	_clients.erase(fd);
 
 	vector<pollfd>::iterator it = _poll_fds.begin();
-    for (; it != _poll_fds.end(); ++it)
-    {
-        if (it->fd == fd)
-        {
-            _poll_fds.erase(it);
-            break;
-        }
-    }
+	for (; it != _poll_fds.end(); ++it)
+	{
+		if (it->fd == fd)
+		{
+			_poll_fds.erase(it);
+			break;
+		}
+	}
 }
 
 void Server::handleClientRead(int clientFd)
 {
-    char buffer[4096];
+	char buffer[4096];
 
-    ssize_t bytes = recv(clientFd, buffer, sizeof(buffer) - 1, 0);
+	ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
 
-    if (bytes == 0)
-    {
-        std::cout << "Client closed connection: " << clientFd << std::endl;
-        closeClient(clientFd);
-        return;
-    }
-
-    if (bytes < 0)
-    {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-
-        std::cout << "recv failed on client: " << clientFd << std::endl;
-        closeClient(clientFd);
-        return;
-    }
-    buffer[bytes] = '\0';
-
-	_clients[clientFd].appendReadBuffer(buffer, bytes);
-
-	if (_clients[clientFd].hasCompleteHeader())
+	if (bytes == 0)
 	{
-		std::cout << "Complete HTTP headers from client " << clientFd << ":\n";
-		std::cout << _clients[clientFd].getReadBuffer() << std::endl;
-
+		std::cout << "[Server] Client disconnected: " << clientFd << std::endl;
 		closeClient(clientFd);
+		return;
 	}
+
+	if (bytes < 0)
+	{
+		if (errno == EAGAIN || errno == EWOULDBLOCK)
+			return;
+
+		std::cout << "[Server] recv failed on client: " << clientFd << std::endl;
+		closeClient(clientFd);
+		return;
+	}
+
+	processClientRequest(clientFd, buffer, bytes);
 }
 
 void	Server::run()
@@ -195,10 +186,57 @@ bool	Server::addPollFd(int fd, short events)
 	return (true);
 }
 
+void Server::processClientRequest(int clientFd, const char* buffer, ssize_t bytes)
+{
+	Client& client = _clients[clientFd];
+	HttpRequest& request = client.getRequest();
+
+	const ConfigServer& defaultConfig = _servers[0]; 
+
+	request.feed(buffer, bytes, defaultConfig, defaultConfig.getClientMaxBody());
+
+	if (request.getState() == STATE_ERROR)
+	{
+		std::cout << "[Server] HTTP Parsing Error on client " << clientFd << "!\n";
+		
+		std::string errResponse = "HTTP/1.1 400 Bad Request\r\nContent-Length: 15\r\nConnection: close\r\n\r\n400 Bad Request";
+		send(clientFd, errResponse.c_str(), errResponse.size(), 0);
+		closeClient(clientFd);
+		return;
+	}
+
+	if (request.getState() == STATE_READY)
+	{
+		std::cout << "[Server] Request successfully received from client " << clientFd << "!\n";
+		std::cout << "Method: " << request.getMethod() 
+				  << " | Path: " << request.getPath() 
+				  << " | Version: " << request.getVersion() << std::endl;
+
+		Router router;
+		const ConfigServer& matchedServer = router.matchServer(_servers, request);
+		const ConfigLocation* matchedLocation = router.matchLocation(matchedServer, request.getPath());
+
+		std::cout << "Matched Server Port: " << matchedServer.getPort() << std::endl;
+		if (matchedLocation)
+			std::cout << "Matched Location: " << matchedLocation->getPath() << std::endl;
+
+		std::string response = 
+			"HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/plain\r\n"
+			"Content-Length: 12\r\n"
+			"Connection: close\r\n"
+			"\r\n"
+			"Hello world\n";
+
+		send(clientFd, response.c_str(), response.size(), 0);
+		closeClient(clientFd);
+	}
+}
+
 /***************************
- *                         *
+ *						 *
  * -- CLASS DECLARATION -- *
- *                         *
+ *						 *
  ***************************/
 
 Server::Server() {}

@@ -10,6 +10,7 @@
 #include "server/Client.hpp"
 #include "server/Listener.hpp"
 #include "config/ConfigServer.hpp"
+#include "http/Router.hpp"
 
 /* -- Config -- */
 #define LISTEN_BACKLOG 128
@@ -42,6 +43,8 @@ private:
 	std::vector<Listener>		_listeners;
 
 	bool						_isAlive;
+
+	void processClientRequest(int clientFd, const char* buffer, ssize_t bytes);
 };
 
 #endif

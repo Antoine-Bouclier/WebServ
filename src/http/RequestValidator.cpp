@@ -1,4 +1,5 @@
 #include "http/RequestValidator.hpp"
+#include "http/HttpRequest.hpp"
 
 RequestValidator::RequestValidator()
 {
@@ -74,9 +75,40 @@ HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request, cons
 	return (OK);
 }
 
-HttpStatusCode	RequestValidator::isValidBody(const HttpRequest& request)
+HttpStatusCode	RequestValidator::isValidBody(const HttpRequest& request, const AConfig& config)
 {
+	if (request.getState() == STATE_ERROR)
+		return (BAD_REQUEST);
 
+	const std::map<std::string, std::string>&			headers = request.getheaders();
+	std::map<std::string, std::string>::const_iterator	cl_it = headers.find("content-length");
+	std::map<std::string, std::string>::const_iterator	te_it = headers.find("transfer-encoding");
+
+	const std::vector<char>& body = request.getBody();
+
+	if (te_it != headers.end() && te_it->second == "chunked")
+	{
+		if (config.getClientMaxBody() > 0 && body.size() > config.getClientMaxBody())
+			return (PAYLOAD_TOO_LARGE);
+
+		return (OK);
+	}
+
+	if (cl_it != headers.end())
+	{
+		std::istringstream	iss(cl_it->second);
+		size_t				content_length = 0;
+
+		iss >> content_length;
+
+		if (config.getClientMaxBody() > 0 && body.size() > config.getClientMaxBody())
+			return (PAYLOAD_TOO_LARGE);
+
+		if (body.size() > content_length)
+			return (BAD_REQUEST);
+	}
+
+	return (OK);
 }
 
 /* -- Utils Header Methods -- */
@@ -102,12 +134,15 @@ HttpStatusCode	RequestValidator::checkContentLength(const std::string& length_st
 			return (BAD_REQUEST);
 	}
 
-	size_t	content_length;
 	std::istringstream	iss(length_str);
+	size_t				content_length;
+
 	iss >> content_length;
-	if (iss.fail())
+	if (iss.fail() || !iss.eof())
+		return (BAD_REQUEST);
+
+	if (max_body_size > 0 && content_length > max_body_size)
 		return (PAYLOAD_TOO_LARGE);
-	else if (content_length > max_body_size)
-		return (PAYLOAD_TOO_LARGE);
+
 	return (OK);
 }

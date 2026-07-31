@@ -6,8 +6,8 @@ using std::map;
 using std::string;
 using std::vector;
 
-typedef typename vector<ConfigServer>::const_iterator	server_i;
-typedef typename vector<string>::const_iterator			string_i;
+typedef vector<ConfigServer>::const_iterator	server_i;
+typedef vector<string>::const_iterator			string_i;
 
 static void	checkServerBlock(const ConfigServer&);
 static void	checkLocationBlock(const ConfigLocation&);
