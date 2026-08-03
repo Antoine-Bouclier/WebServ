@@ -7,10 +7,11 @@
 #include <poll.h>
 #include <netinet/in.h>
 
+#include "http/Router.hpp"
 #include "server/Client.hpp"
 #include "server/Listener.hpp"
+#include "http/HttpResponse.hpp"
 #include "config/ConfigServer.hpp"
-#include "http/Router.hpp"
 
 /* -- Config -- */
 #define LISTEN_BACKLOG 128
@@ -31,9 +32,11 @@ public:
 	void	setupServer(void);
 	bool	isListenerFd(int fd) const;
 	bool	addPollFd(int fd, short events);
+	bool	setPollEvents(int fd, short events);
 
 	void	closeClient(int fd);
 	void	handleClientRead(int clientFd);
+	void	handleClientWrite(int clientFd);
 	void	handleClientConnection(int listenerFd);
 
 private:

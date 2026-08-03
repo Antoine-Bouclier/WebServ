@@ -1,9 +1,9 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
-#include "string"
-#include "vector"
-#include "map"
+#include <map>
+#include <string>
+#include <vector>
 #include "http/HttpStatusCode.hpp"
 
 class HttpResponse
@@ -33,7 +33,7 @@ class HttpResponse
 
 		void	addHeader(const std::string& key, const std::string& value);
 
-
+		std::string	serialize() const;
 
 };
 

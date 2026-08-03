@@ -3,3 +3,4 @@ obj/
 a.out
 webserv
 .vscode/
+.bin/

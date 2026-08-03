@@ -36,6 +36,7 @@ vpath %.cpp $(SRC_DIRS)
 
 # file lists
 SRCS		=	main.cpp				\
+				Router.cpp				\
 				Lexer.cpp				\
 				Server.cpp				\
 				Client.cpp				\
@@ -43,11 +44,11 @@ SRCS		=	main.cpp				\
 				AConfig.cpp				\
 				Listener.cpp			\
 				HttpRequest.cpp			\
-				RequestValidator.cpp	\
-				Router.cpp				\
+				HttpResponse.cpp		\
 				ConfigParser.cpp		\
 				ConfigServer.cpp		\
 				ConfigLocation.cpp		\
+				RequestValidator.cpp	\
 				ConfigNormalizer.cpp	\
 				ConfigParserHandlers.cpp
 

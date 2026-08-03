@@ -1,9 +1,14 @@
+#include <sstream>
 #include "http/HttpResponse.hpp"
 
-HttpResponse::HttpResponse() : _version("HTTP/1.1")
-{
+using std::map;
+using std::string;
 
-}
+static const char* getReasonPhrase(HttpStatusCode status);
+
+// Class
+
+HttpResponse::HttpResponse() : _version("HTTP/1.1"), _status(OK) {}
 
 HttpResponse::HttpResponse(const HttpResponse& src) : 
 	_version(src._version),
@@ -30,15 +35,53 @@ HttpResponse::~HttpResponse()
 }
 
 /* -- Getters -- */
-const std::string&	HttpResponse::getVersion() const { return (_version); }
-const HttpStatusCode&	HttpResponse::getStatus() const { return (_status); }
-const std::map<std::string, std::string>&	HttpResponse::getHeaders() const { return (_headers); }
+const string&				HttpResponse::getVersion() const { return (_version); }
+const HttpStatusCode&		HttpResponse::getStatus() const { return (_status); }
+const map<string, string>&	HttpResponse::getHeaders() const { return (_headers); }
 const std::vector<char>&	HttpResponse::getBody() const {return (_body); }
 
 /* -- Setters -- */
-void	HttpResponse::setVersion(const std::string& version) { _version = version; }
+void	HttpResponse::setVersion(const string& version) { _version = version; }
 void	HttpResponse::setStatus(const HttpStatusCode& status) { _status = status; }
-void	HttpResponse::setHeaders(const std::map<std::string, std::string>& headers) { _headers = headers; }
+void	HttpResponse::setHeaders(const map<string, string>& headers) { _headers = headers; }
 void	HttpResponse::setBody(const std::vector<char>& body) { _body = body; }
 
-void	HttpResponse::addHeader(const std::string& key, const std::string& value) { _headers[key] = value; }
+void	HttpResponse::addHeader(const string& key, const string& value) { _headers[key] = value; }
+
+// Other methods
+
+string HttpResponse::serialize() const
+{
+	std::ostringstream out;
+	map<string, string>::const_iterator it;
+
+	out << _version << " " << _status << " " << getReasonPhrase(_status) << "\r\n";
+
+	for (it = _headers.begin(); it != _headers.end(); ++it)
+		out << it->first << ": " << it->second << "\r\n";
+
+	out << "Content-Length: " << _body.size() << "\r\n";
+	out << "Connection: close\r\n\r\n";
+	out << string(_body.begin(), _body.end());
+
+	return out.str();
+}
+
+// Static methods
+
+static const char* getReasonPhrase(HttpStatusCode status)
+{
+	switch (status)
+	{
+		case OK: return "OK";
+		case NOT_FOUND: return "Not Found";
+		case BAD_REQUEST: return "Bad Request";
+		case URI_TOO_LONG: return "URI Too Long";
+		case LENGTH_REQUIRED: return "Length Required";
+		case NOT_IMPLEMENTED: return "Not Implemented";
+		case PAYLOAD_TOO_LARGE: return "Payload Too Large";
+		case VERSION_NOT_SUPPORTED: return "HTTP Version Not Supported";
+
+		default: return "Internal Server Error";
+	}
+}
