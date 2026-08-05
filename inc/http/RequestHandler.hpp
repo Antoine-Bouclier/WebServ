@@ -1,10 +1,11 @@
 #ifndef REQUESTHANDLER_HPP
 #define REQUESTHANDLER_HPP
 
-#include "HttpRequest.hpp"
-#include "HttpResponse.hpp"
-#include "ConfigLocation.hpp"
-#include "ConfigServer.hpp"
+#include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
+#include "config/ConfigLocation.hpp"
+#include "config/ConfigServer.hpp"
+#include <fstream>
 #include <string>
 #include <sys/stat.h>
 
@@ -16,9 +17,10 @@ class RequestHandler {
 		RequestHandler();
 		~RequestHandler();
 
-		static std::string buildFilePath(const std::string& uri, const std::string& root);
-		static bool isDirectory(const std::string& path);
-		static bool isRegularFile(const std::string& path);
+		static std::string	buildFilePath(const std::string& uri, const std::string& root);
+		static bool			isDirectory(const std::string& path);
+		static bool			isRegularFile(const std::string& path);
+		static std::string	getMimeType(const std::string& path);
 };
 
 #endif

@@ -49,6 +49,7 @@ SRCS		=	main.cpp				\
 				ConfigServer.cpp		\
 				ConfigLocation.cpp		\
 				RequestValidator.cpp	\
+				RequestHandler.cpp		\
 				ConfigNormalizer.cpp	\
 				ConfigParserHandlers.cpp
 

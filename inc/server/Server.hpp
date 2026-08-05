@@ -12,6 +12,7 @@
 #include "server/Listener.hpp"
 #include "http/HttpResponse.hpp"
 #include "config/ConfigServer.hpp"
+#include "http/RequestHandler.hpp"
 
 /* -- Config -- */
 #define LISTEN_BACKLOG 128

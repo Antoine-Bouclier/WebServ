@@ -271,14 +271,10 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 		if (matchedLocation)
 			std::cout << "Matched Location: " << matchedLocation->getPath() << std::endl;
 
-		HttpResponse	response;
-		string			body = "Hello world\n";
-
-		response.setStatus(OK);
-		response.addHeader("Content-Type", "text/plain");
-		response.setBody(vector<char>(body.begin(), body.end()));
+		HttpResponse response = RequestHandler::handle(request, matchedLocation, &matchedServer);
 
 		client.appendWriteBuffer(response.serialize());
+		
 		setPollEvents(clientFd, POLLOUT);
 	}
 }
