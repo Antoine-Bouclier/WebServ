@@ -140,7 +140,33 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 
 HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const ConfigLocation* loc, const ConfigServer* server)
 {
-	HttpResponse		response;
+	HttpResponse	response;
+	std::string		error_page_path = "";
+
+	if (loc != NULL)
+		error_page_path = loc->getErrorPagePath(error);
+	
+	if (error_page_path.empty() && server != NULL)
+		error_page_path = server->getErrorPagePath(error);
+	
+	if (!error_page_path.empty())
+	{
+		std::string	root = getEffectiveRoot(loc, server);
+		std::string full_path = buildFilePath(error_page_path, root);
+
+		std::ifstream	file(full_path.c_str(), std::ios::in | std::ios::binary);
+		if (file.is_open())
+		{
+			std::vector<char> body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+			
+			response.setBody(body);
+			response.addHeader("Content-Type", "text/html");
+			response.setStatus(error);
+			
+			return (response);
+		}
+	}
+
 	std::ostringstream	out;
 
 	out 
@@ -156,9 +182,6 @@ HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const Conf
 	response.setBody(body);
 	response.addHeader("Content-Type", "text/html");
 	response.setStatus(error);
-
-	(void)loc;
-	(void)server;
 
 	return (response);
 }
