@@ -58,10 +58,8 @@ std::string	RequestHandler::getMimeType(const std::string& path)
 	return "application/octet-stream";
 }
 
-HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server)
+std::string	RequestHandler::getEffectiveRoot(const ConfigLocation* location, const ConfigServer* server)
 {
-	HttpResponse	response;
-
 	std::string root = "";
 	if (location && !location->getRoot().empty())
 		root = location->getRoot();
@@ -69,7 +67,14 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 		root = server->getRoot();
 	else
 		root = "./www";
+	return (root);
+}
 
+HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server)
+{
+	HttpResponse	response;
+
+	std::string	root = getEffectiveRoot(location, server);
 	std::string target_path = buildFilePath(request.getUri(), root);
 
 	if (isDirectory(target_path))
@@ -98,14 +103,14 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 		}
 
 		if (!index_found)
-			response.setStatus(FORBIDDEN);
+			return (buildErrorResponse(FORBIDDEN, location, server));
 	}
 	if (isRegularFile(target_path))
 	{
 		std::ifstream file(target_path.c_str(), std::ios::binary);
 
 		if (!file.is_open())
-			response.setStatus(FORBIDDEN);
+			return (buildErrorResponse(FORBIDDEN, location, server));
 		else
 		{
 			file.seekg(0, std::ios::end);
@@ -128,7 +133,32 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 		}
 	}
 	else
-		response.setStatus(NOT_FOUND);
+		return (buildErrorResponse(NOT_FOUND, location, server));
 
 	return response;
+}
+
+HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const ConfigLocation* loc, const ConfigServer* server)
+{
+	HttpResponse		response;
+	std::ostringstream	out;
+
+	out 
+		<< "<html><head><title>" 
+		<< error << " " << getReasonPhrase(error) 
+		<< "</title></head><body><center><h1>"
+		<< error << " " << getReasonPhrase(error)
+		<< "</h1></center></body></html>";
+
+	std::string	content = out.str();
+	std::vector<char>	body(content.begin(), content.end());
+
+	response.setBody(body);
+	response.addHeader("Content-Type", "text/html");
+	response.setStatus(error);
+
+	(void)loc;
+	(void)server;
+
+	return (response);
 }

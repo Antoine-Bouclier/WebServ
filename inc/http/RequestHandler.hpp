@@ -11,7 +11,8 @@
 
 class RequestHandler {
 	public:
-		static HttpResponse handle(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server);
+		static HttpResponse	handle(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server);
+		static HttpResponse	buildErrorResponse(HttpStatusCode error, const ConfigLocation* loc, const ConfigServer* server);
 
 	private:
 		RequestHandler();
@@ -21,6 +22,7 @@ class RequestHandler {
 		static bool			isDirectory(const std::string& path);
 		static bool			isRegularFile(const std::string& path);
 		static std::string	getMimeType(const std::string& path);
+		static std::string	getEffectiveRoot(const ConfigLocation* location, const ConfigServer* server);
 };
 
 #endif

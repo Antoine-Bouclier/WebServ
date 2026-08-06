@@ -45,6 +45,7 @@ SRCS		=	main.cpp				\
 				Listener.cpp			\
 				HttpRequest.cpp			\
 				HttpResponse.cpp		\
+				HttpStatusCode.cpp		\
 				ConfigParser.cpp		\
 				ConfigServer.cpp		\
 				ConfigLocation.cpp		\

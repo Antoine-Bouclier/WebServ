@@ -15,4 +15,6 @@ enum HttpStatusCode
 	VERSION_NOT_SUPPORTED = 505
 };
 
+const char* getReasonPhrase(HttpStatusCode status);
+
 #endif
