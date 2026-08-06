@@ -244,12 +244,7 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 	{
 		std::cout << "[Server] HTTP Parsing Error on client " << clientFd << "!\n";
 		
-		HttpResponse	response;
-		string			body = "400 Bad Request";
-
-		response.setStatus(BAD_REQUEST);
-		response.addHeader("Content-Type", "text/plain");
-		response.setBody(vector<char>(body.begin(), body.end()));
+		HttpResponse	response = RequestHandler::buildErrorResponse(BAD_REQUEST, NULL, &defaultConfig);
 
 		client.appendWriteBuffer(response.serialize());
 		setPollEvents(clientFd, POLLOUT);

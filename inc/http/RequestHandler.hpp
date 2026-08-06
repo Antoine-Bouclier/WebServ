@@ -8,6 +8,7 @@
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
+#include <dirent.h>
 
 class RequestHandler {
 	public:
@@ -23,6 +24,7 @@ class RequestHandler {
 		static bool			isRegularFile(const std::string& path);
 		static std::string	getMimeType(const std::string& path);
 		static std::string	getEffectiveRoot(const ConfigLocation* location, const ConfigServer* server);
+		static HttpResponse generateAutoindex(const std::string& uri, const std::string& target_path, const ConfigLocation* location, const ConfigServer* server);
 };
 
 #endif
