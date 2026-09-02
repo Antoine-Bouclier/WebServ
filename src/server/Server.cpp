@@ -35,9 +35,9 @@ static int createListeningSocket(const std::string& host, int port)
 }
 
 /***********************
- *					 *
+ *					   *
  * -- CLASS METHODS -- *
- *					 *
+ *					   *
  ***********************/
 
 bool	Server::isListenerFd(int fd) const
@@ -99,15 +99,37 @@ void Server::handleClientRead(int clientFd)
 
 	if (bytes < 0)
 	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-
-		std::cout << "[Server] recv failed on client: " << clientFd << std::endl;
+		std::cout << "[Server] Client disconnected or recv failed: " << clientFd << std::endl;
 		closeClient(clientFd);
 		return;
 	}
 
 	processClientRequest(clientFd, buffer, bytes);
+}
+
+void Server::handleClientWrite(int clientFd)
+{
+	Client& client = _clients[clientFd];
+
+	if (!client.hasPendingWrite())
+	{
+		closeClient(clientFd);
+		return;
+	}
+
+	const string& buffer = client.getWriteBuffer();
+	ssize_t bytes = send(clientFd, buffer.c_str(), buffer.size(), 0);
+
+	if (bytes <= 0)
+	{
+		closeClient(clientFd);
+		return;
+	}
+
+	client.consumeWriteBuffer(static_cast<size_t>(bytes));
+
+	if (!client.hasPendingWrite())
+		closeClient(clientFd);
 }
 
 void	Server::run()
@@ -127,19 +149,30 @@ void	Server::run()
 			throw std::runtime_error("Error while getting fds with poll");
 		}
 
-		for (size_t i = 0; i < _poll_fds.size(); i++)
+		for (int i = 0; i < static_cast<int>(_poll_fds.size()); ++i)
 		{
-			if (_poll_fds[i].revents == 0) // Le fd n'est pas prêt
-				continue;
-			else if (_poll_fds[i].revents & POLLIN)
-			{
-				int fd = _poll_fds[i].fd;
+			int fd = _poll_fds[i].fd;
+			short revents = _poll_fds[i].revents;
 
-				if (isListenerFd(fd))
+			if (!revents)
+				continue;
+
+			if (isListenerFd(fd))
+			{
+				if (revents & POLLIN)
 					handleClientConnection(fd);
-				else
-					handleClientRead(fd);
+				continue;
 			}
+
+			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+				closeClient(fd);
+			else if (revents & POLLOUT)
+				handleClientWrite(fd);
+			else if (revents & POLLIN)
+				handleClientRead(fd);
+
+			if (_clients.find(fd) == _clients.end())
+				--i;
 		}
 	}
 }
@@ -186,12 +219,24 @@ bool	Server::addPollFd(int fd, short events)
 	return (true);
 }
 
+bool Server::setPollEvents(int fd, short events)
+{
+	for (size_t i = 0; i < _poll_fds.size(); ++i)
+	{
+		if (_poll_fds[i].fd == fd)
+		{
+			_poll_fds[i].events = events;
+			return (true);
+		}
+	}
+	return (false);
+}
+
 void Server::processClientRequest(int clientFd, const char* buffer, ssize_t bytes)
 {
-	Client& client = _clients[clientFd];
-	HttpRequest& request = client.getRequest();
-
-	const ConfigServer& defaultConfig = _servers[0]; 
+	Client&				client = _clients[clientFd];
+	HttpRequest&		request = client.getRequest();
+	const ConfigServer&	defaultConfig = _servers[0]; 
 
 	request.feed(buffer, bytes, defaultConfig, defaultConfig.getClientMaxBody());
 
@@ -199,9 +244,10 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 	{
 		std::cout << "[Server] HTTP Parsing Error on client " << clientFd << "!\n";
 		
-		std::string errResponse = "HTTP/1.1 400 Bad Request\r\nContent-Length: 15\r\nConnection: close\r\n\r\n400 Bad Request";
-		send(clientFd, errResponse.c_str(), errResponse.size(), 0);
-		closeClient(clientFd);
+		HttpResponse	response = RequestHandler::buildErrorResponse(BAD_REQUEST, NULL, &defaultConfig);
+
+		client.appendWriteBuffer(response.serialize());
+		setPollEvents(clientFd, POLLOUT);
 		return;
 	}
 
@@ -220,16 +266,11 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 		if (matchedLocation)
 			std::cout << "Matched Location: " << matchedLocation->getPath() << std::endl;
 
-		std::string response = 
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/plain\r\n"
-			"Content-Length: 12\r\n"
-			"Connection: close\r\n"
-			"\r\n"
-			"Hello world\n";
+		HttpResponse response = RequestHandler::handle(request, matchedLocation, &matchedServer);
 
-		send(clientFd, response.c_str(), response.size(), 0);
-		closeClient(clientFd);
+		client.appendWriteBuffer(response.serialize());
+		
+		setPollEvents(clientFd, POLLOUT);
 	}
 }
 

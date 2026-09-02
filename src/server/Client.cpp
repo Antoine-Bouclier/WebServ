@@ -35,7 +35,8 @@ int					Client::getListenerFd() const { return (_listener_fd); }
 HttpRequest&		Client::getRequest() { return (_request); }
 const HttpRequest&	Client::getRequest() const { return (_request); }
 
-const std::string&	Client::getWriteBuffer() const { return (_writeBuffer); }
+const string&		Client::getWriteBuffer() const { return (_writeBuffer); }
 void				Client::appendWriteBuffer(const std::string& data) { _writeBuffer.append(data); }
 void				Client::clearWriteBuffer() { _writeBuffer.clear(); }
 bool				Client::hasPendingWrite() const { return (!_writeBuffer.empty()); }
+void				Client::consumeWriteBuffer(size_t bytes) { _writeBuffer.erase(0, bytes); }

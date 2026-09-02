@@ -27,6 +27,7 @@ public:
 	void				appendWriteBuffer(const std::string& data);
 	void				clearWriteBuffer();
 	bool				hasPendingWrite() const;
+	void				consumeWriteBuffer(size_t bytes);
 
 private:
 	int			_fd;

@@ -21,6 +21,8 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& src)
 		_method = src._method;
 		_uri = src._uri;
 		_version = src._version;
+		_query = src._query;
+		_path = src._path;
 
 		/* -- Headers -- */
 		_headers = src._headers;
