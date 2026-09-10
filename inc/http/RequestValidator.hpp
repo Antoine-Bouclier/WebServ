@@ -1,7 +1,7 @@
 #ifndef REQUESTVALIDATOR_HPP
 #define REQUESTVALIDATOR_HPP
 
-#include "http/httpStatusCode.hpp"
+#include "http/HttpStatusCode.hpp"
 #include "http/HttpRequest.hpp"
 #include "config/AConfig.hpp"
 

@@ -23,4 +23,12 @@ const vector<string>&	AConfig::getIndex() const			{ return (_index); }
 const map<int, string>&	AConfig::getErrorPage() const		{ return (_error_pages); }
 size_t					AConfig::getClientMaxBody() const	{ return (_client_max_body_size); }
 
+const std::string	AConfig::getErrorPagePath(int error_code) const
+{
+	std::map<int, string>::const_iterator it = _error_pages.find(error_code);
+	if (it != _error_pages.end())
+		return (it->second);
+	return ("");
+}
+
 bool	AConfig::isClientMaxBodySizeAssigned() const { return (_max_size_assigned); }

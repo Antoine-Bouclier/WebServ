@@ -1,3 +1,4 @@
+#include <csignal>
 #include <iostream>
 
 #include "server/Server.hpp"
@@ -9,6 +10,8 @@ int	main(int argc, char **argv)
 	if (argc == 2)
 	{
 		ConfigParser	parser;
+
+		std::signal(SIGPIPE, SIG_IGN);
 
 		try
 		{

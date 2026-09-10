@@ -3,7 +3,7 @@
 
 #include "config/AConfig.hpp"
 #include "http/RequestValidator.hpp"
-#include "http/httpStatusCode.hpp"
+#include "http/HttpStatusCode.hpp"
 
 #include <string>		// std::string
 #include <map>			// std::map

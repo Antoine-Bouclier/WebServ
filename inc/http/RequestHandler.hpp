@@ -1,0 +1,30 @@
+#ifndef REQUESTHANDLER_HPP
+#define REQUESTHANDLER_HPP
+
+#include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
+#include "config/ConfigLocation.hpp"
+#include "config/ConfigServer.hpp"
+#include <fstream>
+#include <string>
+#include <sys/stat.h>
+#include <dirent.h>
+
+class RequestHandler {
+	public:
+		static HttpResponse	handle(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server);
+		static HttpResponse	buildErrorResponse(HttpStatusCode error, const ConfigLocation* loc, const ConfigServer* server);
+
+	private:
+		RequestHandler();
+		~RequestHandler();
+
+		static std::string	buildFilePath(const std::string& uri, const std::string& root);
+		static bool			isDirectory(const std::string& path);
+		static bool			isRegularFile(const std::string& path);
+		static std::string	getMimeType(const std::string& path);
+		static std::string	getEffectiveRoot(const ConfigLocation* location, const ConfigServer* server);
+		static HttpResponse generateAutoindex(const std::string& uri, const std::string& target_path, const ConfigLocation* location, const ConfigServer* server);
+};
+
+#endif

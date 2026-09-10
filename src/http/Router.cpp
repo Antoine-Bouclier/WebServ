@@ -46,8 +46,7 @@ const ConfigServer& Router::matchServer(const std::vector<ConfigServer>& servers
 
 	std::string target_host = extractHostName(host_header);
 
-	for (std::vector<ConfigServer>::const_iterator s_it = servers.begin(); 
-	s_it != servers.end(); ++s_it)
+	for (std::vector<ConfigServer>::const_iterator s_it = servers.begin(); s_it != servers.end(); ++s_it)
 	{
 		const std::vector<std::string>& names = s_it->getServerNames();
 
@@ -94,8 +93,7 @@ const ConfigLocation* Router::matchLocation(const ConfigServer& server, const st
 	return best_match;
 }
 
-RouteResult Router::route(const std::vector<ConfigServer>& candidate_servers, 
-                         const HttpRequest& request) const
+RouteResult Router::route(const std::vector<ConfigServer>& candidate_servers, const HttpRequest& request) const
 {
 	RouteResult result;
 
@@ -106,12 +104,12 @@ RouteResult Router::route(const std::vector<ConfigServer>& candidate_servers,
 
 	if (!location)
 	{
-		result.status_code = NOT_FOUND; // 404
+		result.status_code = NOT_FOUND;
 		return result;
 	}
 
 	result.location = location;
-	result.status_code = OK; // 200
+	result.status_code = OK;
 
 	return result;
 }

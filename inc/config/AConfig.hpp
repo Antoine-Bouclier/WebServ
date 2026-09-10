@@ -32,6 +32,7 @@ public:
 	const std::string&					getRoot(void) const;
 	const std::vector<std::string>&		getIndex(void) const;
 	const std::map<int, std::string>&	getErrorPage(void) const;
+	const std::string					getErrorPagePath(int error_code) const;
 	size_t								getClientMaxBody(void) const;
 	bool								isClientMaxBodySizeAssigned(void) const;
 };
