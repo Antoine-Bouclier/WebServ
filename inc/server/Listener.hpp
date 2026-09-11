@@ -3,7 +3,6 @@
 
 /* -- Includes -- */
 #include <string>
-#include <vector>
 #include "config/ConfigServer.hpp"
 
 /* -- Class -- */
@@ -24,16 +23,14 @@ public:
 	int			getPort(void) const;
 	std::string	getHost(void) const;
 
-	void		addServer(const ConfigServer& server);
+	const ConfigServer& getServer() const;
 
 private:
 	int									_fd;
 	int									_port;
 	std::string							_host;
-	std::vector<const ConfigServer*>	_servers;
+	const ConfigServer* _server;
 };
 
-/* -- Methods -- */
-Listener*	getListener(const std::string& host, const int& port, std::vector<Listener>& list);
 
 #endif

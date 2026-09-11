@@ -7,7 +7,6 @@ using std::string;
 using std::vector;
 
 typedef vector<ConfigServer>::const_iterator	server_i;
-typedef vector<string>::const_iterator			string_i;
 
 static void	checkServerBlock(const ConfigServer&);
 static void	checkLocationBlock(const ConfigLocation&);
@@ -80,21 +79,7 @@ static void hasDuplicateServer(const vector<ConfigServer>& servers)
 		for (server_i b = a + 1; b != servers.end(); ++b)
 		{
 			if (a->getHost() == b->getHost() && a->getPort() == b->getPort())
-			{
-				const vector<string>& a_names = a->getServerNames();
-				const vector<string>& b_names = b->getServerNames();
-
-				if (a_names.empty() && b_names.empty())
-					throw ErrorException("Duplicate default server found");
-				else
-				{
-					for (string_i name = b_names.begin(); name != b_names.end(); name++)
-					{
-						if (std::find(a_names.begin(), a_names.end(), *name) != a_names.end())
-							throw ErrorException("Duplicate virtual server found");
-					}
-				}
-			}
+				throw ErrorException("Duplicate listen address");
 		}
 	}
 }

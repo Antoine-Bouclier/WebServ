@@ -1,12 +1,17 @@
 #include "http/HttpRequest.hpp"
 
+static int hexValue(char c);
+
 HttpRequest::HttpRequest()
 	:	_state(STATE_REQUEST_LINE),
 		_position_ptr(0), _content_length(0),
 		_current_chunk_size(0),
+		_max_body_size(0),
+		_status_code(BAD_REQUEST),
 		_has_duplicate_host(false),
 		_is_chunked(false),
-		_reading_chunk_headers(false){}
+		_reading_chunk_headers(true),
+		_reading_trailers(false){}
 
 HttpRequest::HttpRequest(const HttpRequest& src)
 {
@@ -36,9 +41,12 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& src)
 		_position_ptr = src._position_ptr;
 		_content_length = src._content_length;
 		_current_chunk_size = src._current_chunk_size;
+		_max_body_size = src._max_body_size;
+		_status_code = src._status_code;
 		_has_duplicate_host = src._has_duplicate_host;
 		_is_chunked = src._is_chunked;
 		_reading_chunk_headers = src._reading_chunk_headers;
+		_reading_trailers = src._reading_trailers;
 	}
 	return (*this);
 }
@@ -50,6 +58,8 @@ HttpRequest::~HttpRequest(){}
 /* ------------- */
 
 const HttpParseState&	HttpRequest::getState() const{ return (_state); }
+
+HttpStatusCode HttpRequest::getStatusCode() const { return (_status_code); }
 
 /* -- Request Line Getters -- */
 const std::string&		HttpRequest::getMethod() const{ return (_method); }
@@ -138,65 +148,63 @@ void	HttpRequest::parseBodyContentLength()
 		_state = STATE_READY;
 }
 
-void	HttpRequest::parseBodyTransferEncoding(size_t max_body_size)
+void HttpRequest::parseBodyTransferEncoding(size_t max_body_size)
 {
-	if (_reading_chunk_headers)
+	if (_reading_chunk_headers || _reading_trailers)
 	{
-		std::vector<char>::iterator	it;
-	
+		std::vector<char>::iterator it;
 		if (!searchEOL(it))
-			return ;
-		
-		std::string			hex(_buffer.begin() + _position_ptr, it);
-		std::istringstream	iss(hex);
-	
-		iss >> std::hex >> _current_chunk_size;
-		if (iss.fail())
+			return;
+		std::string line(_buffer.begin() + _position_ptr, it);
+
+		if (_reading_trailers)
 		{
-			_state = STATE_ERROR;
-			return ;
-		}
-	
-		if (_current_chunk_size == 0)
-		{
-			if (_buffer.end() - (it + 2) < 2)
-				return ;
-			
-			if (*(it + 2) != '\r' || *(it + 3) != '\n')
+			if (!line.empty())
 			{
 				_state = STATE_ERROR;
-				return ;
+				return;
 			}
-			_position_ptr = (it - _buffer.begin()) + 4;
 			_state = STATE_READY;
-			return ;
+		}
+		else
+		{
+			size_t size = 0;
+			if (line.empty())
+			{
+				_state = STATE_ERROR;
+				return;
+			}
+			for (size_t i = 0; i < line.size(); ++i)
+			{
+				int digit = hexValue(line[i]);
+				if (digit < 0 || size > (static_cast<size_t>(-1) - digit) / 16)
+				{
+					_state = STATE_ERROR;
+					return;
+				}
+				size = size * 16 + digit;
+			}
+			if (max_body_size > 0 && (_body.size() > max_body_size || size > max_body_size - _body.size()))
+			{
+				_status_code = PAYLOAD_TOO_LARGE;
+				_state = STATE_ERROR;
+				return;
+			}
+			_current_chunk_size = size;
+			_reading_chunk_headers = false;
+			_reading_trailers = (size == 0);
 		}
 		_position_ptr = it - _buffer.begin() + 2;
-		_reading_chunk_headers = false;
+		return;
 	}
-	else
-	{
-		size_t	to_copy = std::min(_buffer.size() - _position_ptr, _current_chunk_size);
 
-		if (_body.size() + to_copy > max_body_size)
-		{
-			_state = STATE_ERROR;
-			return ;
-		}
-
-		std::vector<char>::iterator	it = _buffer.begin() + _position_ptr;
-		_body.insert(_body.end(), it, it + to_copy);
-
-		_position_ptr += to_copy;
-		_current_chunk_size -= to_copy;
-
-		if (_current_chunk_size == 0)
-		{
-			if (!skipEOL())
-				return ;
-			_reading_chunk_headers = true;
-		}
-	}
+	size_t count = std::min(_buffer.size() - _position_ptr, _current_chunk_size);
+	std::vector<char>::iterator it = _buffer.begin() + _position_ptr;
+	_body.insert(_body.end(), it, it + count);
+	_position_ptr += count;
+	_current_chunk_size -= count;
+	if (_current_chunk_size == 0 && skipEOL())
+		_reading_chunk_headers = true;
 }
 
 void	HttpRequest::resumeParsing()
@@ -205,6 +213,55 @@ void	HttpRequest::resumeParsing()
 		_state = STATE_BODY;
 	else
 		_state = STATE_READY;
+}
+
+static int hexValue(char c)
+{
+	if (c >= '0' && c <= '9') return (c - '0');
+	if (c >= 'a' && c <= 'f') return (c - 'a' + 10);
+	if (c >= 'A' && c <= 'F') return (c - 'A' + 10);
+	return (-1);
+}
+
+void HttpRequest::decodePath()
+{
+	std::string decoded;
+
+	for (size_t i = 0; i < _path.size(); ++i)
+	{
+		char c = _path[i];
+		if (c == '%')
+		{
+			if (i + 2 >= _path.size() || hexValue(_path[i + 1]) < 0 || hexValue(_path[i + 2]) < 0)
+			{
+				_state = STATE_ERROR;
+				return;
+			}
+			c = static_cast<char>(hexValue(_path[i + 1]) * 16 + hexValue(_path[i + 2]));
+			i += 2;
+		}
+		if (c == '\0')
+		{
+			_state = STATE_ERROR;
+			return;
+		}
+		decoded += c;
+	}
+	_path = decoded;
+
+	for (size_t start = 0; start < _path.size();)
+	{
+		size_t end = _path.find('/', start);
+		if (end == std::string::npos)
+			end = _path.size();
+		if (_path.substr(start, end - start) == "..")
+		{
+			_status_code = FORBIDDEN;
+			_state = STATE_ERROR;
+			return;
+		}
+		start = end + 1;
+	}
 }
 
 void HttpRequest::cleanUriToPath()
@@ -278,6 +335,9 @@ void	HttpRequest::parseRequestLine()
 		return ;
 
 	cleanUriToPath();
+	decodePath();
+	if (_state == STATE_ERROR)
+		return;
 
 	_state = STATE_HEADERS;
 }
@@ -350,45 +410,43 @@ void	HttpRequest::parseBody(size_t max_body_size)
 /* -- MAIN METHOD -- */
 /* ------------------ */
 
-/**
- * @brief Feeds raw byte chunks into the parser and triggers the state machine.
- * 
- * Appends the incoming bytes to the internal stream buffer, then processes the data through 
- * consecutive parsing stages (Request-Line -> Headers -> Body) as long as progress is being made 
- * and no errors are encountered.
- * 
- * @param[in] raw_bytes Pointer to the array of raw bytes read from the network socket.
- * @param[in] bytes_count Total number of bytes to append and process.
- */
-void	HttpRequest::feed(const char* raw_bytes, size_t bytes_count, const AConfig& config,  size_t max_body_size)
+void HttpRequest::feed(const char* data, size_t size)
 {
-	_buffer.insert(_buffer.end(), raw_bytes, raw_bytes + bytes_count);
-	while (_state != STATE_READY && _state != STATE_ERROR)
+	_buffer.insert(_buffer.end(), data, data + size);
+	parse();
+}
+
+void HttpRequest::startBody(const AConfig& config)
+{
+	RequestValidator validator;
+	HttpStatusCode status = validator.validate(*this, config);
+
+	if (status != OK)
 	{
-		size_t			old_position = _position_ptr;
-		HttpParseState	old_state = _state;
+		_status_code = status;
+		_state = STATE_ERROR;
+		return;
+	}
+	_max_body_size = config.getClientMaxBody();
+	resumeParsing();
+	parse();
+}
+
+void HttpRequest::parse()
+{
+	while (_state != STATE_READY && _state != STATE_ERROR && _state != STATE_HEADERS_DONE)
+	{
+		size_t old_position = _position_ptr;
+		HttpParseState old_state = _state;
 
 		if (_state == STATE_REQUEST_LINE)
 			parseRequestLine();
 		else if (_state == STATE_HEADERS)
 			parseHeaders();
-		else if (_state == STATE_HEADERS_DONE)
-		{
-			RequestValidator	validator;
-			HttpStatusCode		status = validator.validate(*this, config);
-
-			if (status != OK)
-			{
-				_state = STATE_ERROR;
-				_status_code = status;
-				break;
-			}
-			resumeParsing();
-		}
 		else if (_state == STATE_BODY)
-			parseBody(max_body_size);
+			parseBody(_max_body_size);
 
-		if (_state == STATE_ERROR || (_state == old_state && _position_ptr == old_position))
+		if (_state == old_state && _position_ptr == old_position)
 			break;
 	}
 }

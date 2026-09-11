@@ -19,7 +19,7 @@ class RequestHandler {
 		RequestHandler();
 		~RequestHandler();
 
-		static std::string	buildFilePath(const std::string& uri, const std::string& root);
+		static std::string	buildFilePath(const std::string& path, const std::string& root, const std::string& prefix);
 		static bool			isDirectory(const std::string& path);
 		static bool			isRegularFile(const std::string& path);
 		static std::string	getMimeType(const std::string& path);

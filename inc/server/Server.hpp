@@ -22,12 +22,10 @@ class	Server
 {
 public:
 	Server();
-	Server(const Server&);
 	Server(const std::vector<ConfigServer>& servers);
 
 	~Server();
 
-	Server&	operator=(const Server&);
 
 	void	run(void);
 	void	setupServer(void);
@@ -36,11 +34,15 @@ public:
 	bool	setPollEvents(int fd, short events);
 
 	void	closeClient(int fd);
+	void	closeTimedOutClients();
 	void	handleClientRead(int clientFd);
 	void	handleClientWrite(int clientFd);
 	void	handleClientConnection(int listenerFd);
 
 private:
+	Server(const Server&);
+	Server& operator=(const Server&);
+	const ConfigServer& getServerConfig(int listenerFd) const;
 	std::map<int, Client>		_clients;		
 	std::vector<ConfigServer>	_servers;
 	std::vector<pollfd>			_poll_fds;

@@ -2,6 +2,7 @@
 # define CLIENT_HPP
 
 /* -- Includes -- */
+#include <ctime>
 #include <string>
 #include "http/HttpRequest.hpp"
 
@@ -17,7 +18,6 @@ public:
 
 	Client&	operator=(const Client&);
 
-	/*  -- Getters -- */
 	int					getFd() const;
 	int					getListenerFd() const;
 	HttpRequest&		getRequest();
@@ -29,11 +29,19 @@ public:
 	bool				hasPendingWrite() const;
 	void				consumeWriteBuffer(size_t bytes);
 
+	void				touch();
+	double				idleSeconds(std::time_t now) const;
+	bool				hasTimedOut(std::time_t now) const;
+	bool				requestTimedOut(std::time_t now) const;
+
 private:
 	int			_fd;
-	int			_listener_fd;
 	HttpRequest	_request;
+	int			_listener_fd;
 	std::string	_writeBuffer;
+	std::time_t _last_activity;
+	std::time_t	_request_started;
+
 };
 
 #endif

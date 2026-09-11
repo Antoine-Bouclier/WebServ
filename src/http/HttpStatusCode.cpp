@@ -6,6 +6,7 @@ const char* getReasonPhrase(HttpStatusCode status)
 	{
 		case OK: return "OK";
 		case NOT_FOUND: return "Not Found";
+		case FORBIDDEN: return "Forbidden";
 		case BAD_REQUEST: return "Bad Request";
 		case URI_TOO_LONG: return "URI Too Long";
 		case METHOD_NOT_ALLOWED: return "Method Not Allowed";

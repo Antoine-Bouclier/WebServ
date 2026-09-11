@@ -45,12 +45,15 @@ class HttpRequest
 		size_t				_position_ptr;
 		size_t				_content_length;
 		size_t				_current_chunk_size;
-		size_t				_status_code;
+		size_t				_max_body_size;
+		HttpStatusCode		_status_code;
 		bool				_has_duplicate_host;
 		bool				_is_chunked;
 		bool				_reading_chunk_headers;
+		bool				_reading_trailers;
 
 		/* -- Private Parsing Sub-routine -- */
+		void	parse();
 		void	parseRequestLine();
 		void	parseHeaders();
 		void	parseBody(size_t max_body_size);
@@ -63,6 +66,7 @@ class HttpRequest
 		void	parseBodyTransferEncoding(size_t max_body_size);
 		void	resumeParsing();
 		void	cleanUriToPath();
+		void	decodePath();
 
 	public:
 		/* Canonical Form */
@@ -72,10 +76,12 @@ class HttpRequest
 		~HttpRequest();
 
 		/* -- Main Function -- */
-		void	feed(const char* raw_bytes, size_t bytes_count, const AConfig& config, size_t max_body_size);
+		void	feed(const char* data, size_t size);
+		void	startBody(const AConfig& config);
 
 		/* -- Getters -- */
 		const HttpParseState&	getState() const;
+		HttpStatusCode getStatusCode() const;
 
 		/* -- Request Line Getters -- */
 		const std::string&		getMethod() const;

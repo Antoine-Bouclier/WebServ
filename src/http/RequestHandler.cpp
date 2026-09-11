@@ -8,15 +8,18 @@ RequestHandler::~RequestHandler()
 {
 }
 
-std::string RequestHandler::buildFilePath(const std::string& uri, const std::string& root)
+std::string RequestHandler::buildFilePath(const std::string& path, const std::string& root, const std::string& prefix)
 {
-	std::string	path = root;
+	std::string suffix = path.substr(prefix.size());
+	std::string result = root;
 
-	if (uri == "/")
-		return (path);
-	if (!path.empty() && path[path.length() - 1] == '/' && uri[0] == '/')
-		path.erase(path.length() - 1);
-	return (path + uri);
+	if (suffix.empty())
+		return (result);
+	if (!result.empty() && result[result.size() - 1] != '/' && suffix[0] != '/')
+		result += '/';
+	else if (!result.empty() && result[result.size() - 1] == '/' && suffix[0] == '/')
+		suffix.erase(0, 1);
+	return (result + suffix);
 }
 
 bool RequestHandler::isDirectory(const std::string& path)
@@ -127,7 +130,7 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 	if (request.getMethod() == "GET")
 	{
 		std::string	root = getEffectiveRoot(location, server);
-		std::string target_path = buildFilePath(request.getUri(), root);
+		std::string target_path = buildFilePath(request.getPath(), root, location ? location->getPath() : "");
 	
 		if (isDirectory(target_path))
 		{
@@ -157,7 +160,7 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 			if (!index_found)
 			{
 				if (location != NULL && location->getAutoindex())
-					return (generateAutoindex(request.getUri(), target_path, location, server));
+					return (generateAutoindex(request.getPath(), target_path, location, server));
 				else
 					return (buildErrorResponse(FORBIDDEN, location, server));
 			}
@@ -211,7 +214,7 @@ HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const Conf
 	if (!error_page_path.empty())
 	{
 		std::string	root = getEffectiveRoot(loc, server);
-		std::string full_path = buildFilePath(error_page_path, root);
+		std::string full_path = buildFilePath(error_page_path, root, "");
 
 		std::ifstream	file(full_path.c_str(), std::ios::in | std::ios::binary);
 		if (file.is_open())

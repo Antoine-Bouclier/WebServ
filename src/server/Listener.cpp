@@ -1,18 +1,6 @@
 #include "server/Listener.hpp"
 
-using std::vector;
 using std::string;
-
-Listener*	getListener(const string& host, const int& port, vector<Listener>& list)
-{
-	vector<Listener>::iterator current = list.begin();
-	for (; current != list.end(); current++)
-	{
-		if (host == current->getHost() && port == current->getPort())
-			return (&(*current));
-	}
-	return (NULL);
-}
 
 /***************************
  *                         *
@@ -22,22 +10,23 @@ Listener*	getListener(const string& host, const int& port, vector<Listener>& lis
 
 Listener::Listener() :
 	_fd(-1),
-	_port(-1)
+	_port(-1),
+	_server(NULL)
 {}
 
 Listener::Listener(const Listener& other) :
 	_fd(other._fd),
 	_port(other._port),
 	_host(other._host),
-	_servers(vector<const ConfigServer*>(other._servers))
+	_server(other._server)
 {}
 
 Listener::Listener(const ConfigServer& server) :
+	_fd(-1),
 	_port(server.getPort()),
-	_host(server.getHost())
-{
-	_servers.push_back(&server);
-}
+	_host(server.getHost()),
+	_server(&server)
+{}
 
 
 Listener::~Listener() {}
@@ -49,7 +38,7 @@ Listener&	Listener::operator=(const Listener& other)
 		_fd = other._fd;
 		_port = other._port;
 		_host = other._host;
-		_servers = other._servers;
+		_server = other._server;
 	}
 	return (*this);
 }
@@ -60,7 +49,4 @@ int		Listener::getFd() const { return (_fd); }
 int		Listener::getPort() const { return (_port); }
 string	Listener::getHost() const { return (_host); }
 
-void	Listener::addServer(const ConfigServer& server)
-{
-	_servers.push_back(&server);
-}
+const ConfigServer& Listener::getServer() const { return (*_server); }

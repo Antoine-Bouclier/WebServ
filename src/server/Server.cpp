@@ -5,6 +5,7 @@
 #include "server/Server.hpp"
 
 using std::map;
+using std::cout;
 using std::vector;
 using std::string;
 
@@ -84,6 +85,26 @@ void Server::closeClient(int fd)
 	}
 }
 
+void Server::closeTimedOutClients()
+{
+    std::time_t now = std::time(NULL);
+    map<int, Client>::iterator it = _clients.begin();
+
+    while (it != _clients.end())
+    {
+        int fd = it->first;
+        bool requestExpired = it->second.requestTimedOut(now);
+        bool idleExpired = it->second.hasTimedOut(now);
+        ++it;
+
+        if (requestExpired || idleExpired)
+        {
+            cout << "[Server] " << (requestExpired ? "Request timeout" : "Idle timeout") << ": fd=" << fd << std::endl;
+            closeClient(fd);
+        }
+    }
+}
+
 void Server::handleClientRead(int clientFd)
 {
 	char buffer[4096];
@@ -92,17 +113,19 @@ void Server::handleClientRead(int clientFd)
 
 	if (bytes == 0)
 	{
-		std::cout << "[Server] Client disconnected: " << clientFd << std::endl;
+		cout << "[Server] Client disconnected: " << clientFd << std::endl;
 		closeClient(clientFd);
 		return;
 	}
 
 	if (bytes < 0)
 	{
-		std::cout << "[Server] Client disconnected or recv failed: " << clientFd << std::endl;
+		cout << "[Server] Client disconnected or recv failed: " << clientFd << std::endl;
 		closeClient(clientFd);
 		return;
 	}
+
+	_clients[clientFd].touch();
 
 	processClientRequest(clientFd, buffer, bytes);
 }
@@ -126,6 +149,8 @@ void Server::handleClientWrite(int clientFd)
 		return;
 	}
 
+	client.touch();
+
 	client.consumeWriteBuffer(static_cast<size_t>(bytes));
 
 	if (!client.hasPendingWrite())
@@ -140,7 +165,7 @@ void	Server::run()
 	_isAlive = true;
 	while (_isAlive)
 	{
-		int ready = poll(&_poll_fds[0], _poll_fds.size(), -1);
+		int ready = poll(&_poll_fds[0], _poll_fds.size(), 1000);
 
 		if (ready == -1)
 		{
@@ -174,6 +199,8 @@ void	Server::run()
 			if (_clients.find(fd) == _clients.end())
 				--i;
 		}
+
+		closeTimedOutClients();
 	}
 }
 
@@ -184,13 +211,6 @@ void	Server::setupServer()
 	{
 		int		port = it->getPort();
 		string	host = it->getHost();
-
-		Listener* exists = getListener(host, port, _listeners);
-		if (exists)
-		{
-			exists->addServer(*it);
-			continue;
-		}
 
 		Listener	newListener = Listener(*it);
 
@@ -232,19 +252,39 @@ bool Server::setPollEvents(int fd, short events)
 	return (false);
 }
 
+const ConfigServer& Server::getServerConfig(int listenerFd) const
+{
+	for (size_t i = 0; i < _listeners.size(); ++i)
+	{
+		if (_listeners[i].getFd() == listenerFd)
+			return (_listeners[i].getServer());
+	}
+	throw std::runtime_error("Unknown listener fd");
+}
+
 void Server::processClientRequest(int clientFd, const char* buffer, ssize_t bytes)
 {
 	Client&				client = _clients[clientFd];
 	HttpRequest&		request = client.getRequest();
-	const ConfigServer&	defaultConfig = _servers[0]; 
+	const ConfigServer&	config = getServerConfig(client.getListenerFd());
 
-	request.feed(buffer, bytes, defaultConfig, defaultConfig.getClientMaxBody());
+	request.feed(buffer, bytes);
+	if (request.getState() == STATE_HEADERS_DONE)
+	{
+		Router					router;
+		const AConfig*			effectiveConfig = &config;
+		const ConfigLocation*	location = router.matchLocation(config, request.getPath());
+
+		if (location)
+			effectiveConfig = location;
+		request.startBody(*effectiveConfig);
+	}
 
 	if (request.getState() == STATE_ERROR)
 	{
-		std::cout << "[Server] HTTP Parsing Error on client " << clientFd << "!\n";
+		cout << "[Server] HTTP Parsing Error on client " << clientFd << "!\n";
 		
-		HttpResponse	response = RequestHandler::buildErrorResponse(BAD_REQUEST, NULL, &defaultConfig);
+		HttpResponse	response = RequestHandler::buildErrorResponse(request.getStatusCode(), NULL, &config);
 
 		client.appendWriteBuffer(response.serialize());
 		setPollEvents(clientFd, POLLOUT);
@@ -253,20 +293,17 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 
 	if (request.getState() == STATE_READY)
 	{
-		std::cout << "[Server] Request successfully received from client " << clientFd << "!\n";
-		std::cout << "Method: " << request.getMethod() 
-				  << " | Path: " << request.getPath() 
-				  << " | Version: " << request.getVersion() << std::endl;
+		cout << "[Server] Request successfully received from client " << clientFd << "!\n";
+		cout << "Method: " << request.getMethod()  << " | Path: " << request.getPath() << " | Version: " << request.getVersion() << std::endl;
 
-		Router router;
-		const ConfigServer& matchedServer = router.matchServer(_servers, request);
-		const ConfigLocation* matchedLocation = router.matchLocation(matchedServer, request.getPath());
+		Router					router;
+		const ConfigLocation*	matchedLocation = router.matchLocation(config, request.getPath());
 
-		std::cout << "Matched Server Port: " << matchedServer.getPort() << std::endl;
+		cout << "Matched Server Port: " << config.getPort() << std::endl;
 		if (matchedLocation)
-			std::cout << "Matched Location: " << matchedLocation->getPath() << std::endl;
+			cout << "Matched Location: " << matchedLocation->getPath() << std::endl;
 
-		HttpResponse response = RequestHandler::handle(request, matchedLocation, &matchedServer);
+		HttpResponse response = RequestHandler::handle(request, matchedLocation, &config);
 
 		client.appendWriteBuffer(response.serialize());
 		
@@ -282,16 +319,7 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 
 Server::Server() {}
 
-Server::Server(const vector<ConfigServer>& servers) :
-	_servers(servers)
-{}
-
-Server::Server(const Server& other) :
-	_clients(other._clients),
-	_servers(other._servers),
-	_poll_fds(other._poll_fds),
-	_listeners(other._listeners)
-{}
+Server::Server(const vector<ConfigServer>& servers) : _servers(servers) {}
 
 Server::~Server()
 {
@@ -303,17 +331,4 @@ Server::~Server()
 	_poll_fds.clear();
 	_clients.clear();
 	_listeners.clear();
-}
-
-Server&	Server::operator=(const Server& other)
-{
-	if (this != &other)
-	{
-		_clients = other._clients;
-		_servers = other._servers;
-		_poll_fds = other._poll_fds;
-		_listeners = other._listeners;
-	}
-
-	return (*this);
 }
