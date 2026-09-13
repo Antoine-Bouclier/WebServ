@@ -91,6 +91,14 @@ const std::map<std::string, std::string>&	HttpRequest::getheaders() const{ retur
  */
 void	HttpRequest::isValidURI()
 {
+	for (size_t i = 0; i < _uri.size(); ++i)
+	{
+		if (static_cast<unsigned char>(_uri[i]) <= 32 || _uri[i] == 127)
+		{
+			_state = STATE_ERROR;
+			return;
+		}
+	}
 	if (_uri.empty() || _uri[0] != '/')
 	{
 		_state = STATE_ERROR;
@@ -154,7 +162,16 @@ void HttpRequest::parseBodyTransferEncoding(size_t max_body_size)
 	{
 		std::vector<char>::iterator it;
 		if (!searchEOL(it))
+		{
+			if (_buffer.size() - _position_ptr > MAX_HEADER_SIZE)
+				_state = STATE_ERROR;
 			return;
+		}
+		if (static_cast<size_t>(it - _buffer.begin()) - _position_ptr > MAX_HEADER_SIZE)
+		{
+			_state = STATE_ERROR;
+			return;
+		}
 		std::string line(_buffer.begin() + _position_ptr, it);
 
 		if (_reading_trailers)
@@ -290,6 +307,15 @@ void HttpRequest::cleanUriToPath()
 	}
 }
 
+bool HttpRequest::checkHeaderSize(size_t end)
+{
+    if (end <= MAX_HEADER_SIZE)
+        return (true);
+    _status_code = BAD_REQUEST;
+    _state = STATE_ERROR;
+    return (false);
+}
+
 /* ------------------------- */
 /* -- PARSING SUB-ROUTINE -- */
 /* ------------------------- */
@@ -309,7 +335,12 @@ void	HttpRequest::parseRequestLine()
 	std::vector<char>::iterator	it;
 
 	if (!searchEOL(it))
-		return ;
+	{
+		checkHeaderSize(_buffer.size());
+		return;
+	}
+	if (!checkHeaderSize(static_cast<size_t>(it - _buffer.begin()) + 2))
+		return;
 
 	std::string	request_line(_buffer.begin() + _position_ptr, it);
 
@@ -357,7 +388,12 @@ void	HttpRequest::parseHeaders()
 {
 	std::vector<char>::iterator	it;
 	if (!searchEOL(it))
-		return ;
+	{
+		checkHeaderSize(_buffer.size());
+		return;
+	}
+	if (!checkHeaderSize(static_cast<size_t>(it - _buffer.begin()) + 2))
+		return;
 
 	std::string	header_line(_buffer.begin() + _position_ptr, it);
 	if (header_line.empty())
@@ -375,14 +411,29 @@ void	HttpRequest::parseHeaders()
 	}
 	std::string key = header_line.substr(0, found);
 	std::string value = header_line.substr(found + 1);
+	if (key.empty()) { _state = STATE_ERROR; return; }
+	for (size_t i = 0; i < key.size(); ++i)
+	{
+		unsigned char c = key[i];
+		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || std::string("!#$%&'*+-.^_`|~").find(c) != std::string::npos))
+		{ _state = STATE_ERROR; return; }
+	}
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		unsigned char c = value[i];
+		if ((c < 32 && c != '\t') || c == 127) { _state = STATE_ERROR; return; }
+	}
+	while (!value.empty() && (value[value.size() - 1] == ' ' || value[value.size() - 1] == '\t'))
+		value.erase(value.size() - 1);
+
 
 	for (size_t i = 0; i < key.length(); ++i)
-		key[i] = std::tolower(key[i]);
+		key[i] = std::tolower(static_cast<unsigned char>(key[i]));
 
 	while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
 		value.erase(0, 1);
 
-	if ((key == "host" || key == "content-length") && _headers.count(key) > 0)
+	if ((key == "host" || key == "content-length" || key == "transfer-encoding") && _headers.count(key) > 0)
 	{
 		_state = STATE_ERROR;
 		return ;
@@ -412,6 +463,8 @@ void	HttpRequest::parseBody(size_t max_body_size)
 
 void HttpRequest::feed(const char* data, size_t size)
 {
+	if (_state == STATE_READY || _state == STATE_ERROR)
+		return;
 	_buffer.insert(_buffer.end(), data, data + size);
 	parse();
 }
@@ -449,4 +502,21 @@ void HttpRequest::parse()
 		if (_state == old_state && _position_ptr == old_position)
 			break;
 	}
+	if (_state == STATE_BODY && _position_ptr)
+	{
+		_buffer.erase(_buffer.begin(), _buffer.begin() + _position_ptr);
+		_position_ptr = 0;
+	}
+	else if (_state == STATE_READY || _state == STATE_ERROR)
+	{
+		std::vector<char>().swap(_buffer);
+		_position_ptr = 0;
+	}
+}
+
+void HttpRequest::releaseBody()
+{
+	std::vector<char>().swap(_body);
+	std::vector<char>().swap(_buffer);
+	_position_ptr = 0;
 }

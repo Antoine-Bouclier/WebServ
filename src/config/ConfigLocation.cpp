@@ -37,3 +37,21 @@ const map<string, string>&		ConfigLocation::getCgi() const { return (_cgi); }
 
 bool							ConfigLocation::isMethodsAssigned() const { return (_methods_assigned); }
 bool							ConfigLocation::isAutoIndexAssigned() const { return (_autoindex_assigned); }
+
+ConfigLocation::ConfigLocation(const ConfigLocation& other) : AConfig(other), _autoindex(other._autoindex), _path(other._path), _upload_path(other._upload_path), _methods(other._methods), _cgi(other._cgi), _methods_assigned(other._methods_assigned), _autoindex_assigned(other._autoindex_assigned) {}
+
+ConfigLocation& ConfigLocation::operator=(const ConfigLocation& other)
+{
+	if (this != &other)
+	{
+		AConfig::operator=(other);
+		_autoindex = other._autoindex;
+		_path = other._path;
+		_upload_path = other._upload_path;
+		_methods = other._methods;
+		_cgi = other._cgi;
+		_methods_assigned = other._methods_assigned;
+		_autoindex_assigned = other._autoindex_assigned;
+	}
+	return (*this);
+}

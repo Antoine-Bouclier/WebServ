@@ -32,3 +32,18 @@ const std::string	AConfig::getErrorPagePath(int error_code) const
 }
 
 bool	AConfig::isClientMaxBodySizeAssigned() const { return (_max_size_assigned); }
+
+AConfig::AConfig(const AConfig& other) : _root(other._root), _index(other._index), _error_pages(other._error_pages), _client_max_body_size(other._client_max_body_size), _max_size_assigned(other._max_size_assigned) {}
+
+AConfig& AConfig::operator=(const AConfig& other)
+{
+	if (this != &other)
+	{
+		_root = other._root;
+		_index = other._index;
+		_error_pages = other._error_pages;
+		_client_max_body_size = other._client_max_body_size;
+		_max_size_assigned = other._max_size_assigned;
+	}
+	return (*this);
+}

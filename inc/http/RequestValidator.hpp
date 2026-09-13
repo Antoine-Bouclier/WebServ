@@ -24,6 +24,8 @@ class RequestValidator
 
 	public:
 		RequestValidator();
+	RequestValidator(const RequestValidator& other);
+	RequestValidator& operator=(const RequestValidator& other);
 		~RequestValidator();
 
 		/* -- Main Method -- */

@@ -129,7 +129,7 @@ HttpStatusCode	RequestValidator::checkContentLength(const std::string& length_st
 
 	for (size_t i = 0; i < length_str.size(); i++)
 	{
-		if (!isdigit(length_str[i]))
+		if (!isdigit(static_cast<unsigned char>(length_str[i])))
 			return (BAD_REQUEST);
 	}
 
@@ -144,4 +144,12 @@ HttpStatusCode	RequestValidator::checkContentLength(const std::string& length_st
 		return (PAYLOAD_TOO_LARGE);
 
 	return (OK);
+}
+
+RequestValidator::RequestValidator(const RequestValidator& other) { (void)other; }
+
+RequestValidator& RequestValidator::operator=(const RequestValidator& other)
+{
+	(void)other;
+	return (*this);
 }

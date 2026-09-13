@@ -75,10 +75,12 @@ std::vector<Token>	Lexer::tokenize(const std::string& config)
 			addToken(token, line, TOKEN_WORD);
 			while (i < config.size() && config[i] != '\n')
 				i++;
+			if (i < config.size())
+				line++;
 			continue ;
 		}
 
-		if (isSpecial(config[i]) || isspace(config[i]))
+		if (isSpecial(config[i]) || isspace(static_cast<unsigned char>(config[i])))
 		{
 			addToken(token, line, TOKEN_WORD);
 			if (isSpecial(config[i]))
@@ -90,6 +92,7 @@ std::vector<Token>	Lexer::tokenize(const std::string& config)
 		else
 			token.value.push_back(config[i]);
 	}
+	addToken(token, line, TOKEN_WORD);
 	return (_tokens);
 }
 

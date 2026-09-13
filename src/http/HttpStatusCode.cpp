@@ -4,6 +4,7 @@ const char* getReasonPhrase(HttpStatusCode status)
 {
 	switch (status)
 	{
+		case MOVED_PERMANENTLY: return "Moved Permanently";
 		case OK: return "OK";
 		case NOT_FOUND: return "Not Found";
 		case FORBIDDEN: return "Forbidden";

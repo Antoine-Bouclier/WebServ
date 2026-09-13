@@ -12,6 +12,8 @@
 #include <sstream>		// std::istringstream()
 #include <iostream>		// std::hex()
 
+# define MAX_HEADER_SIZE 16384
+
 enum HttpParseState
 {
 	STATE_REQUEST_LINE,
@@ -67,6 +69,7 @@ class HttpRequest
 		void	resumeParsing();
 		void	cleanUriToPath();
 		void	decodePath();
+		bool	checkHeaderSize(size_t end);
 
 	public:
 		/* Canonical Form */
@@ -78,6 +81,7 @@ class HttpRequest
 		/* -- Main Function -- */
 		void	feed(const char* data, size_t size);
 		void	startBody(const AConfig& config);
+		void releaseBody();
 
 		/* -- Getters -- */
 		const HttpParseState&	getState() const;

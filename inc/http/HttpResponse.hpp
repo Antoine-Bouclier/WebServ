@@ -1,6 +1,7 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
+#include <ios>
 #include <map>
 #include <string>
 #include <vector>
@@ -13,6 +14,8 @@ class HttpResponse
 		HttpStatusCode	_status;
 		std::map<std::string, std::string>	_headers;
 		std::vector<char>	_body;
+		std::string _file_path;
+		std::streamoff _file_size;
 
 	public:
 		HttpResponse();
@@ -25,6 +28,10 @@ class HttpResponse
 		const HttpStatusCode&						getStatus() const;
 		const std::map<std::string, std::string>&	getHeaders() const;
 		const std::vector<char>&					getBody() const;
+
+		void setFile(const std::string& path, std::streamoff size);
+		const std::string& getFilePath() const;
+		std::streamoff getFileSize() const;
 
 		void	setVersion(const std::string& version);
 		void	setStatus(const HttpStatusCode& status);

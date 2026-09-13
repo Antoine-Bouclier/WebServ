@@ -10,6 +10,8 @@ class ConfigParser
 {
 	public:
 		ConfigParser();
+	ConfigParser(const ConfigParser& other);
+	ConfigParser& operator=(const ConfigParser& other);
 		~ConfigParser();
 
 		std::vector<ConfigServer>&			getServer(void);
@@ -50,17 +52,17 @@ class ConfigParser
 		struct ConfigName;
 
 		template <typename T>
-		static T& require(iter &i, AConfig& config, const std::string& directive)
+		static T& require(iter&, AConfig& config, const std::string& directive)
 		{
 			T* ptr = dynamic_cast<T*>(&config);
 			if (!ptr)
-				throw ErrorException(directive + " only allowed in " + ConfigName<T>::name + "block.", i->line);
+				throw ErrorException(directive + " only allowed in " + ConfigName<T>::name() + " block.");
 
 			return (*ptr);
 		}
 };
 
-template<> struct ConfigParser::ConfigName<ConfigServer> { static const char* const name; };
-template<> struct ConfigParser::ConfigName<ConfigLocation> { static const char* const name; };
+template<> struct ConfigParser::ConfigName<ConfigServer> { static const char* name() { return "server"; } };
+template<> struct ConfigParser::ConfigName<ConfigLocation> { static const char* name() { return "location"; } };
 
 #endif

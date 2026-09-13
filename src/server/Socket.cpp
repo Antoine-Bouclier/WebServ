@@ -49,17 +49,14 @@ Params:
 	command: operation to perform on the file descriptor
 	...: optional argument required by some commands
 
-F_GETFL: retrieve the current file status flags
 F_SETFL: update the file status flags
 O_NONBLOCK: make I/O operations non-blocking
 
 Used to prevent accept(), recv() and send() from blocking the server.
 */
-void	setNonBlocking(int fd)
+bool setNonBlocking(int fd)
 {
-	// int current_fd_flags = fcntl(fd, F_GETFL, 0);
-	// fcntl(fd, F_SETFL, current_fd_flags | O_NONBLOCK);
-	fcntl(fd, F_SETFL, O_NONBLOCK);
+	return (fcntl(fd, F_SETFL, O_NONBLOCK) != -1);
 }
 
 /*
@@ -75,12 +72,10 @@ Params:
 SOL_SOCKET: option is handled at the socket level
 SO_REUSEADDR: allow reusing a local address/port immediately after restarting the server
 */
-void	setReuseAddr(int fd)
+bool setReuseAddr(int fd)
 {
-	if (fd <= 0)
-		return;
-	int	active = 1;
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &active, sizeof(active));
+	int active = 1;
+	return (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &active, sizeof(active)) != -1);
 }
 
 /*

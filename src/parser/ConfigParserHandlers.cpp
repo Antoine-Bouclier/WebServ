@@ -213,9 +213,9 @@ void	ConfigParser::handleClientMax(iter &it, iter end, AConfig &config)
 	std::string	value = it->value;
 	char		last_char = value.at(value.size() - 1);
 
-	if (!isdigit(last_char))
+	if (!isdigit(static_cast<unsigned char>(last_char)))
 	{
-		switch (toupper(last_char))
+		switch (toupper(static_cast<unsigned char>(last_char)))
 		{
 			case 'K': multiplier = 1024L; break;
 			case 'M': multiplier = 1024L * 1024L; break;
@@ -253,6 +253,7 @@ void	ConfigParser::handleErrorPage(iter &it, iter end, AConfig &config)
 
 	while (it != end && it->type == TOKEN_WORD && isNumber(it->value))
 	{
+		if (it->value.size() != 3) throw ErrorException("Invalid error code", it->line);
 		int code = std::atoi(it->value.c_str());
 
 		if (code < 300 || code > 599)
@@ -316,7 +317,3 @@ static void requireToken(iter it, iter end, TokenType type, const std::string& m
 	if (it == end || it->type != type)
 		throw (it != end ? ErrorException(msg, it->line) : ErrorException(msg));
 }
-
-/* -- Template specialisation definitions (logs) -- */
-const char* const ConfigParser::ConfigName<ConfigServer>::name = "server";
-const char* const ConfigParser::ConfigName<ConfigLocation>::name = "location";

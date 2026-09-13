@@ -3,6 +3,12 @@
 
 /* -- Includes -- */
 #include <ctime>
+#include <fstream>
+#include "http/HttpResponse.hpp"
+
+#define FILE_BUFFER_SIZE 16384
+#define CLIENT_IDLE_TIMEOUT 30
+#define CLIENT_REQUEST_TIMEOUT 120
 #include <string>
 #include "http/HttpRequest.hpp"
 
@@ -29,6 +35,8 @@ public:
 	bool				hasPendingWrite() const;
 	void				consumeWriteBuffer(size_t bytes);
 
+	void setResponse(const HttpResponse& response);
+	bool fillWriteBuffer();
 	void				touch();
 	double				idleSeconds(std::time_t now) const;
 	bool				hasTimedOut(std::time_t now) const;
@@ -41,6 +49,10 @@ private:
 	std::string	_writeBuffer;
 	std::time_t _last_activity;
 	std::time_t	_request_started;
+	std::ifstream _file;
+	std::string _file_path;
+	std::streamoff _file_offset;
+	std::streamoff _file_remaining;
 
 };
 

@@ -58,3 +58,19 @@ void ConfigServer::applyInheritanceToLocations()
 		}
 	}
 }
+
+ConfigServer::ConfigServer(const ConfigServer& other) : AConfig(other), _port(other._port), _host(other._host), _locations(other._locations), _redirection(other._redirection), _server_names(other._server_names) {}
+
+ConfigServer& ConfigServer::operator=(const ConfigServer& other)
+{
+	if (this != &other)
+	{
+		AConfig::operator=(other);
+		_port = other._port;
+		_host = other._host;
+		_locations = other._locations;
+		_redirection = other._redirection;
+		_server_names = other._server_names;
+	}
+	return (*this);
+}

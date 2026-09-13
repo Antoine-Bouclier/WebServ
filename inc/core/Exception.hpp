@@ -10,6 +10,17 @@ class ErrorException : public std::exception
 		std::string	_message;
 
 	public:
+		ErrorException() : _message("CONFIG ERROR") {}
+		ErrorException(const ErrorException& other) : std::exception(other), _message(other._message) {}
+		ErrorException& operator=(const ErrorException& other)
+		{
+			if (this != &other)
+			{
+				std::exception::operator=(other);
+				_message = other._message;
+			}
+			return (*this);
+		}
 		ErrorException(std::string const& message) : _message("CONFIG ERROR: " + message) {}
 		ErrorException(std::string const& message, unsigned int line) 
 		{

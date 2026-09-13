@@ -16,6 +16,8 @@ protected:
 
 public:
 	AConfig();
+	AConfig(const AConfig& other);
+	AConfig& operator=(const AConfig& other);
 	virtual ~AConfig() = 0;
 
 	/* -- Setters -- */

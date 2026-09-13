@@ -17,6 +17,8 @@ class RequestHandler {
 
 	private:
 		RequestHandler();
+	RequestHandler(const RequestHandler& other);
+	RequestHandler& operator=(const RequestHandler& other);
 		~RequestHandler();
 
 		static std::string	buildFilePath(const std::string& path, const std::string& root, const std::string& prefix);

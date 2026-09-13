@@ -1,4 +1,7 @@
 #include "http/RequestHandler.hpp"
+#include <cerrno>
+
+#define MAX_AUTOINDEX_SIZE (1024 * 1024)
 
 RequestHandler::RequestHandler()
 {
@@ -8,8 +11,61 @@ RequestHandler::~RequestHandler()
 {
 }
 
+static std::string escapeHtml(const std::string& text)
+{
+	std::string result;
+	for (size_t i = 0; i < text.size(); ++i)
+	{
+		if (text[i] == '&') result += "&amp;";
+		else if (text[i] == '<') result += "&lt;";
+		else if (text[i] == '>') result += "&gt;";
+		else if (text[i] == '"') result += "&quot;";
+		else if (text[i] == '\'') result += "&#39;";
+		else result += text[i];
+	}
+	return (result);
+}
+
+static std::string encodePath(const std::string& path)
+{
+	std::string result;
+	for (size_t i = 0; i < path.size(); ++i)
+	{
+		unsigned char c = path[i];
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/' || c == '-' || c == '_' || c == '.' || c == '~')
+			result += c;
+		else
+		{
+			result += '%';
+			result += "0123456789ABCDEF"[c / 16];
+			result += "0123456789ABCDEF"[c % 16];
+		}
+	}
+	return (result);
+}
+
+static HttpStatusCode fileError()
+{
+	if (errno == ENOENT || errno == ENOTDIR) return (NOT_FOUND);
+	if (errno == EACCES || errno == EPERM || errno == ELOOP) return (FORBIDDEN);
+	return (INTERNAL_SERVER_ERROR);
+}
+
+static bool prepareFile(HttpResponse& response, const std::string& path)
+{
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0)
+		return (false);
+	std::ifstream file(path.c_str(), std::ios::binary);
+	if (!file) return (false);
+	response.setFile(path, info.st_size);
+	return (true);
+}
+
 std::string RequestHandler::buildFilePath(const std::string& path, const std::string& root, const std::string& prefix)
 {
+	if (path.compare(0, prefix.size(), prefix) != 0)
+		throw std::runtime_error("Invalid location prefix");
 	std::string suffix = path.substr(prefix.size());
 	std::string result = root;
 
@@ -47,6 +103,12 @@ std::string	RequestHandler::getMimeType(const std::string& path)
 		return "application/octet-stream";
 
 	std::string ext = path.substr(dotPos);
+	for (size_t i = 0; i < ext.size(); ++i)
+		ext[i] = std::tolower(static_cast<unsigned char>(ext[i]));
+	if (ext == ".svg") return "image/svg+xml";
+	if (ext == ".pdf") return "application/pdf";
+	if (ext == ".woff2") return "font/woff2";
+	if (ext == ".webp") return "image/webp";
 
 	if (ext == ".html" || ext == ".htm") return "text/html";
 	if (ext == ".css") return "text/css";
@@ -75,129 +137,101 @@ std::string	RequestHandler::getEffectiveRoot(const ConfigLocation* location, con
 
 HttpResponse RequestHandler::generateAutoindex(const std::string& uri, const std::string& target_path, const ConfigLocation* location, const ConfigServer* server)
 {
-	std::ostringstream	out;
-	HttpResponse		response;
-
-	out << "<html>\n"
-		<< "<head><title>Index of " << uri << "</title></head>\n"
-		<< "<body>\n"
-		<< "<h1>Index of " << uri << "</h1>\n"
-		<< "<ul>\n";
-	
-	DIR*	dir = opendir(target_path.c_str());
-	if (dir == NULL)
-		return (buildErrorResponse(INTERNAL_SERVER_ERROR, location, server));
-
-	std::string href_base = uri;
-	if (!href_base.empty() && href_base[href_base.length() - 1] != '/')
-		href_base += "/";
-
-	struct dirent	*ent;
-	while ((ent = readdir(dir)) != NULL)
+	DIR* dir = opendir(target_path.c_str());
+	if (!dir) return (buildErrorResponse(fileError(), location, server));
+	try
 	{
-		if (ent->d_name[0] == '.' && (ent->d_name[1] == '\0' || (ent->d_name[1] == '.' && ent->d_name[2] == '\0')))
-			continue;
-
-		out << "<li><a href=\"" << href_base << ent->d_name
-			<< "\">" << ent->d_name << "</a></li>";
+		std::string content = "<html><head><title>Index of " + escapeHtml(uri) + "</title></head><body><h1>Index of " + escapeHtml(uri) + "</h1><ul>";
+		std::string base = uri;
+		if (base.empty() || base[base.size() - 1] != '/') base += '/';
+		struct dirent* entry;
+		while ((entry = readdir(dir)) != NULL)
+		{
+			std::string name = entry->d_name;
+			if (name == "." || name == "..") continue;
+			if (isDirectory(buildFilePath(name, target_path, ""))) name += '/';
+			content += "<li><a href=\"" + encodePath(base + name) + "\">" + escapeHtml(name) + "</a></li>";
+			if (content.size() > MAX_AUTOINDEX_SIZE)
+			{
+				closedir(dir);
+				dir = NULL;
+				return (buildErrorResponse(INTERNAL_SERVER_ERROR, location, server));
+			}
+		}
+		closedir(dir);
+		dir = NULL;
+		content += "</ul></body></html>";
+		HttpResponse response;
+		response.setBody(std::vector<char>(content.begin(), content.end()));
+		response.addHeader("Content-Type", "text/html; charset=utf-8");
+		return (response);
 	}
-	closedir(dir);
-	out << "</ul></body></html>";
-
-	std::string content = out.str();
-	std::vector<char> body(content.begin(), content.end());
-
-	response.setBody(body);
-	response.setStatus(OK);
-	response.addHeader("Content-Type", "text/html");
-
-	return (response);
+	catch (...)
+	{
+		if (dir) closedir(dir);
+		throw;
+	}
 }
 
 HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server)
 {
-	HttpResponse	response;
-
-	if (location != NULL && !location->getMethods().empty())
+	if (location)
 	{
-		const std::vector<std::string>& allowed = location->getMethods();
-		if (std::find(allowed.begin(), allowed.end(), request.getMethod()) == allowed.end())
+		const std::vector<std::string>& methods = location->getMethods();
+		if (std::find(methods.begin(), methods.end(), request.getMethod()) == methods.end())
 		{
-			return buildErrorResponse(METHOD_NOT_ALLOWED, location, server);
+			HttpResponse response = buildErrorResponse(METHOD_NOT_ALLOWED, location, server);
+			std::string allowed;
+			for (size_t i = 0; i < methods.size(); ++i) allowed += (i ? ", " : "") + methods[i];
+			response.addHeader("Allow", allowed);
+			return (response);
 		}
 	}
+	if (request.getMethod() != "GET")
+		return (buildErrorResponse(NOT_IMPLEMENTED, location, server));
 
-	if (request.getMethod() == "GET")
+	std::string path = buildFilePath(request.getPath(), getEffectiveRoot(location, server), location ? location->getPath() : "");
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0)
+		return (buildErrorResponse(fileError(), location, server));
+	if (S_ISDIR(info.st_mode))
 	{
-		std::string	root = getEffectiveRoot(location, server);
-		std::string target_path = buildFilePath(request.getPath(), root, location ? location->getPath() : "");
-	
-		if (isDirectory(target_path))
+		if (request.getPath()[request.getPath().size() - 1] != '/')
 		{
-			std::vector<std::string>	index_list;
-			if (location && !location->getIndex().empty())
-				index_list = location->getIndex();
-			else if (server && !server->getIndex().empty())
-				index_list = server->getIndex();
-			
-			bool	index_found = false;
-	
-			for (std::vector<std::string>::const_iterator it = index_list.begin(); it != index_list.end(); ++it)
-			{
-				std::string	index_path = target_path;
-				if (!index_path.empty() && index_path[index_path.length() - 1] != '/')
-					index_path += "/";
-				index_path += *it;
-				if (isRegularFile(index_path))
-				{
-					target_path = index_path;
-					response.setStatus(OK);
-					index_found = true;
-					break;
-				}
-			}
-	
-			if (!index_found)
-			{
-				if (location != NULL && location->getAutoindex())
-					return (generateAutoindex(request.getPath(), target_path, location, server));
-				else
-					return (buildErrorResponse(FORBIDDEN, location, server));
-			}
+			HttpResponse response;
+			response.setStatus(MOVED_PERMANENTLY);
+			std::string target = encodePath(request.getPath()) + "/";
+			if (!request.getQuery().empty()) target += "?" + request.getQuery();
+			response.addHeader("Location", target);
+			return (response);
 		}
-		if (isRegularFile(target_path))
+		std::vector<std::string> indexes;
+		if (location) indexes = location->getIndex();
+		else if (server) indexes = server->getIndex();
+		bool found = false;
+		for (size_t i = 0; i < indexes.size(); ++i)
 		{
-			std::ifstream file(target_path.c_str(), std::ios::binary);
-	
-			if (!file.is_open())
-				return (buildErrorResponse(FORBIDDEN, location, server));
-			else
+			std::string candidate = buildFilePath(indexes[i], path, "");
+			if (stat(candidate.c_str(), &info) != 0)
 			{
-				file.seekg(0, std::ios::end);
-				std::streamsize fileSize = file.tellg();
-				file.seekg(0, std::ios::beg);
-	
-				std::vector<char> buffer(fileSize);
-				if (file.read(&buffer[0], fileSize))
-				{
-					response.setBody(buffer);
-					response.setStatus(OK);
-	
-					std::ostringstream ss;
-					ss << fileSize;
-					
-					response.addHeader("Content-Type", getMimeType(target_path));
-				}
-				else
-					response.setStatus(INTERNAL_SERVER_ERROR);
+				HttpStatusCode error = fileError();
+				if (error != NOT_FOUND) return (buildErrorResponse(error, location, server));
+				continue;
 			}
+			if (S_ISREG(info.st_mode)) { path = candidate; found = true; break; }
 		}
-		else
-			return (buildErrorResponse(NOT_FOUND, location, server));
+		if (!found)
+		{
+			if (location && location->getAutoindex()) return (generateAutoindex(request.getPath(), path, location, server));
+			return (buildErrorResponse(FORBIDDEN, location, server));
+		}
 	}
-
-
-	return response;
+	else if (!S_ISREG(info.st_mode))
+		return (buildErrorResponse(FORBIDDEN, location, server));
+	HttpResponse response;
+	if (!prepareFile(response, path)) return (buildErrorResponse(FORBIDDEN, location, server));
+	response.addHeader("Content-Type", getMimeType(path));
+	return (response);
 }
 
 HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const ConfigLocation* loc, const ConfigServer* server)
@@ -216,15 +250,10 @@ HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const Conf
 		std::string	root = getEffectiveRoot(loc, server);
 		std::string full_path = buildFilePath(error_page_path, root, "");
 
-		std::ifstream	file(full_path.c_str(), std::ios::in | std::ios::binary);
-		if (file.is_open())
+		if (prepareFile(response, full_path))
 		{
-			std::vector<char> body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-			
-			response.setBody(body);
 			response.addHeader("Content-Type", "text/html");
 			response.setStatus(error);
-			
 			return (response);
 		}
 	}
@@ -245,4 +274,12 @@ HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const Conf
 	response.setStatus(error);
 
 	return (response);
+}
+
+RequestHandler::RequestHandler(const RequestHandler& other) { (void)other; }
+
+RequestHandler& RequestHandler::operator=(const RequestHandler& other)
+{
+	(void)other;
+	return (*this);
 }

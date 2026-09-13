@@ -16,6 +16,7 @@
 
 /* -- Config -- */
 #define LISTEN_BACKLOG 128
+#define MAX_CLIENTS 256
 
 /* -- Class -- */
 class	Server

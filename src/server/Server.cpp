@@ -17,8 +17,10 @@ static int createListeningSocket(const std::string& host, int port)
 
 	try
 	{
-		setReuseAddr(fd);
-		setNonBlocking(fd);
+		if (!setReuseAddr(fd))
+			throw std::runtime_error("setsockopt failed");
+		if (!setNonBlocking(fd))
+			throw std::runtime_error("fcntl failed");
 
 		if (bindSocket(fd, host, port) == -1)
 			throw std::runtime_error("bind failed on " + host);
@@ -61,12 +63,22 @@ void Server::handleClientConnection(int listenerFd)
 	if (clientFd == -1)
 		return;
 
-	setNonBlocking(clientFd);
+	if (_clients.size() >= MAX_CLIENTS || !setNonBlocking(clientFd))
+	{
+		close(clientFd);
+		return;
+	}
 
-	Client client(clientFd, listenerFd);
-	_clients[clientFd] = client;
-
-	addPollFd(clientFd, POLLIN);
+	try
+	{
+		_clients[clientFd] = Client(clientFd, listenerFd);
+		if (!addPollFd(clientFd, POLLIN))
+			closeClient(clientFd);
+	}
+	catch (...)
+	{
+		closeClient(clientFd);
+	}
 }
 
 void Server::closeClient(int fd)
@@ -99,7 +111,6 @@ void Server::closeTimedOutClients()
 
         if (requestExpired || idleExpired)
         {
-            cout << "[Server] " << (requestExpired ? "Request timeout" : "Idle timeout") << ": fd=" << fd << std::endl;
             closeClient(fd);
         }
     }
@@ -113,14 +124,12 @@ void Server::handleClientRead(int clientFd)
 
 	if (bytes == 0)
 	{
-		cout << "[Server] Client disconnected: " << clientFd << std::endl;
 		closeClient(clientFd);
 		return;
 	}
 
 	if (bytes < 0)
 	{
-		cout << "[Server] Client disconnected or recv failed: " << clientFd << std::endl;
 		closeClient(clientFd);
 		return;
 	}
@@ -134,7 +143,7 @@ void Server::handleClientWrite(int clientFd)
 {
 	Client& client = _clients[clientFd];
 
-	if (!client.hasPendingWrite())
+	if (!client.hasPendingWrite() || !client.fillWriteBuffer())
 	{
 		closeClient(clientFd);
 		return;
@@ -170,7 +179,10 @@ void	Server::run()
 		if (ready == -1)
 		{
 			if (errno == EINTR)
+			{
+				closeTimedOutClients();
 				continue;
+			}
 			throw std::runtime_error("Error while getting fds with poll");
 		}
 
@@ -184,17 +196,24 @@ void	Server::run()
 
 			if (isListenerFd(fd))
 			{
+				if (revents & (POLLERR | POLLHUP | POLLNVAL))
+					throw std::runtime_error("Listening socket failed");
 				if (revents & POLLIN)
 					handleClientConnection(fd);
 				continue;
 			}
 
-			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+			try
+			{
+				if (revents & (POLLERR | POLLNVAL)) closeClient(fd);
+				else if (revents & POLLOUT) handleClientWrite(fd);
+				else if (revents & POLLIN) handleClientRead(fd);
+				else if (revents & POLLHUP) closeClient(fd);
+			}
+			catch (...)
+			{
 				closeClient(fd);
-			else if (revents & POLLOUT)
-				handleClientWrite(fd);
-			else if (revents & POLLIN)
-				handleClientRead(fd);
+			}
 
 			if (_clients.find(fd) == _clients.end())
 				--i;
@@ -215,18 +234,24 @@ void	Server::setupServer()
 		Listener	newListener = Listener(*it);
 
 		int fd = createListeningSocket(host, port);
-		if (fd <= 0)
-			throw std::runtime_error("Failed to create listening socket fd");
-		newListener.setFd(fd);
-		if (!addPollFd(fd, POLLIN))
-			throw std::runtime_error("Failed to register listening fd into poll");
-		_listeners.push_back(newListener);
+		try
+		{
+			newListener.setFd(fd);
+			if (!addPollFd(fd, POLLIN))
+				throw std::runtime_error("Failed to register listening fd into poll");
+			_listeners.push_back(newListener);
+		}
+		catch (...)
+		{
+			closeClient(fd);
+			throw;
+		}
 	}
 }
 
 bool	Server::addPollFd(int fd, short events)
 {
-	if (fd <= 0)
+	if (fd < 0)
 		return (false);
 
 	pollfd	pfd;
@@ -282,30 +307,24 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 
 	if (request.getState() == STATE_ERROR)
 	{
-		cout << "[Server] HTTP Parsing Error on client " << clientFd << "!\n";
 		
-		HttpResponse	response = RequestHandler::buildErrorResponse(request.getStatusCode(), NULL, &config);
+		HttpResponse	response = RequestHandler::buildErrorResponse(request.getStatusCode(), Router().matchLocation(config, request.getPath()), &config);
 
-		client.appendWriteBuffer(response.serialize());
+		client.setResponse(response);
 		setPollEvents(clientFd, POLLOUT);
 		return;
 	}
 
 	if (request.getState() == STATE_READY)
 	{
-		cout << "[Server] Request successfully received from client " << clientFd << "!\n";
-		cout << "Method: " << request.getMethod()  << " | Path: " << request.getPath() << " | Version: " << request.getVersion() << std::endl;
 
 		Router					router;
 		const ConfigLocation*	matchedLocation = router.matchLocation(config, request.getPath());
 
-		cout << "Matched Server Port: " << config.getPort() << std::endl;
-		if (matchedLocation)
-			cout << "Matched Location: " << matchedLocation->getPath() << std::endl;
 
 		HttpResponse response = RequestHandler::handle(request, matchedLocation, &config);
 
-		client.appendWriteBuffer(response.serialize());
+		client.setResponse(response);
 		
 		setPollEvents(clientFd, POLLOUT);
 	}
@@ -317,9 +336,9 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
  *						 *
  ***************************/
 
-Server::Server() {}
+Server::Server() : _isAlive(false) {}
 
-Server::Server(const vector<ConfigServer>& servers) : _servers(servers) {}
+Server::Server(const vector<ConfigServer>& servers) : _servers(servers), _isAlive(false) {}
 
 Server::~Server()
 {

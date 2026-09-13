@@ -90,7 +90,10 @@ void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 			std::map<string, Handler>::iterator h = _handlers.find(it->value);
 
 			if (h != _handlers.end())
-				(this->*(h->second))(++it, end, config);
+				{
+				if (++it == end) throw ErrorException("Missing directive value");
+				(this->*(h->second))(it, end, config);
+			}
 			else
 				throw ErrorException("Unknown directive: " + it->value, it->line);
 		}
@@ -107,3 +110,17 @@ vector<ConfigServer>&		ConfigParser::getServer()		{ return (_server); }
 const vector<ConfigServer>&	ConfigParser::getServer() const { return (_server); }
 
 ConfigParser::~ConfigParser() {}
+
+ConfigParser::ConfigParser(const ConfigParser& other) : _path(other._path), _lexer(other._lexer), _server(other._server), _handlers(other._handlers) {}
+
+ConfigParser& ConfigParser::operator=(const ConfigParser& other)
+{
+	if (this != &other)
+	{
+		_path = other._path;
+		_lexer = other._lexer;
+		_server = other._server;
+		_handlers = other._handlers;
+	}
+	return (*this);
+}
