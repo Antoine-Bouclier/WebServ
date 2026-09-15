@@ -7,7 +7,8 @@ using std::string;
 ConfigLocation::ConfigLocation()
 	:	_autoindex(false),
 		_methods_assigned(false),
-		_autoindex_assigned(false)
+		_autoindex_assigned(false),
+		_redirect(0, "")
 {
 	_methods.push_back("GET");
 	_methods.push_back("POST");
@@ -38,7 +39,7 @@ const map<string, string>&		ConfigLocation::getCgi() const { return (_cgi); }
 bool							ConfigLocation::isMethodsAssigned() const { return (_methods_assigned); }
 bool							ConfigLocation::isAutoIndexAssigned() const { return (_autoindex_assigned); }
 
-ConfigLocation::ConfigLocation(const ConfigLocation& other) : AConfig(other), _autoindex(other._autoindex), _path(other._path), _upload_path(other._upload_path), _methods(other._methods), _cgi(other._cgi), _methods_assigned(other._methods_assigned), _autoindex_assigned(other._autoindex_assigned) {}
+ConfigLocation::ConfigLocation(const ConfigLocation& other) : AConfig(other), _autoindex(other._autoindex), _path(other._path), _upload_path(other._upload_path), _methods(other._methods), _cgi(other._cgi), _methods_assigned(other._methods_assigned), _autoindex_assigned(other._autoindex_assigned), _redirect(other._redirect) {}
 
 ConfigLocation& ConfigLocation::operator=(const ConfigLocation& other)
 {
@@ -52,6 +53,10 @@ ConfigLocation& ConfigLocation::operator=(const ConfigLocation& other)
 		_cgi = other._cgi;
 		_methods_assigned = other._methods_assigned;
 		_autoindex_assigned = other._autoindex_assigned;
+		_redirect = other._redirect;
 	}
 	return (*this);
 }
+
+void ConfigLocation::setRedirect(int status, const string& target) { _redirect = std::make_pair(status, target); }
+const std::pair<int, string>& ConfigLocation::getRedirect() const { return (_redirect); }

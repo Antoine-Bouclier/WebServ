@@ -14,8 +14,8 @@ class ConfigServer : public AConfig
 
 	public:
 		ConfigServer();
-	ConfigServer(const ConfigServer& other);
-	ConfigServer& operator=(const ConfigServer& other);
+		ConfigServer(const ConfigServer& other);
+		ConfigServer& operator=(const ConfigServer& other);
 		~ConfigServer();
 
 		/* -- Setter -- */

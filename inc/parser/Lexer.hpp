@@ -23,22 +23,18 @@ struct Token
 class Lexer
 {
 public:
-	/* -- Canonical Form -- */
 	Lexer();
 	Lexer(const Lexer&);
 	Lexer &operator=(const Lexer&);
 	~Lexer();
 
-	/* -- DEBUG -- */
 	void				printToken(void);
 
-	/* -- Member function -- */
 	std::vector<Token>	tokenize(const std::string&);
 
 private:
 		std::vector<Token>	_tokens;
 
-		/* -- Private methods -- */
 		bool		isSpecial(char);
 		TokenType	getTokenType(char);
 		void		addToken(Token&, const unsigned int, TokenType);

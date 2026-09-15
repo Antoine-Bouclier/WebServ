@@ -20,7 +20,6 @@ public:
 	AConfig& operator=(const AConfig& other);
 	virtual ~AConfig() = 0;
 
-	/* -- Setters -- */
 	void	setClientMaxBody(size_t size);
 	void	setRoot(const std::string& root);
 	void	addIndex(const std::string& index);
@@ -30,7 +29,6 @@ public:
 	void	setIndex(const std::vector<std::string>& index);
 	void	setErrorPages(const std::map<int, std::string>& error_pages);
 
-	/* -- Getters -- */
 	const std::string&					getRoot(void) const;
 	const std::vector<std::string>&		getIndex(void) const;
 	const std::map<int, std::string>&	getErrorPage(void) const;

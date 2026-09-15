@@ -15,7 +15,6 @@ class Router
 		~Router();
 		Router&	operator=(const Router& rhs);
 
-		/* -- Main Method -- */
 		const ConfigLocation*	matchLocation(const ConfigServer& server, const std::string& uri) const;
 };
 

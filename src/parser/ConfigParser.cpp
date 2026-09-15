@@ -42,6 +42,7 @@ ConfigParser::ConfigParser()
 	_handlers["client_max_body_size"] = &ConfigParser::handleClientMax;
 		
 	/* -- Handlers location -- */
+	_handlers["return"] = &ConfigParser::handleReturn;
 	_handlers["cgi"] = &ConfigParser::handleCgi;
 	_handlers["autoindex"] = &ConfigParser::handleAutoindex;
 	_handlers["upload_path"] = &ConfigParser::handleUploadPath;

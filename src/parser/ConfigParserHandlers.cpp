@@ -317,3 +317,24 @@ static void requireToken(iter it, iter end, TokenType type, const std::string& m
 	if (it == end || it->type != type)
 		throw (it != end ? ErrorException(msg, it->line) : ErrorException(msg));
 }
+
+void ConfigParser::handleReturn(iter& it, iter end, AConfig& config)
+{
+	ConfigLocation& location = require<ConfigLocation>(it, config, "return");
+	if (location.getRedirect().first) throw ErrorException("Duplicate return directive");
+	requireToken(it, end, TOKEN_WORD, "return requires a status");
+	if (it->value != "301" && it->value != "302" && it->value != "307" && it->value != "308")
+		throw ErrorException("return status must be 301, 302, 307 or 308", it->line);
+	int status = std::atoi((it++)->value.c_str());
+	requireToken(it, end, TOKEN_WORD, "return requires a target");
+	std::string target = (it++)->value;
+	if (target.empty() || (target[0] != '/' && target.compare(0, 7, "http://") != 0 && target.compare(0, 8, "https://") != 0))
+		throw ErrorException("return target must start with /, http:// or https://");
+	for (size_t i = 0; i < target.size(); ++i)
+	{
+		if (static_cast<unsigned char>(target[i]) <= 32 || target[i] == 127)
+			throw ErrorException("Invalid character in return target");
+	}
+	requireToken(it, end, TOKEN_SEMICOLON, "Missing ';' after return");
+	location.setRedirect(status, target);
+}

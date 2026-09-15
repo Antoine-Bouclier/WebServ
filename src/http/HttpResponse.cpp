@@ -68,9 +68,10 @@ string HttpResponse::serialize() const
 			out << it->first << ": " << it->second << "\r\n";
 	}
 
-	out << "Content-Length: " << (_file_path.empty() ? static_cast<std::streamoff>(_body.size()) : _file_size) << "\r\n";
+	if (_status != NO_CONTENT)
+    	out << "Content-Length: " << (_file_path.empty() ? static_cast<std::streamoff>(_body.size()) : _file_size) << "\r\n";
 	out << "Connection: close\r\n\r\n";
-	if (!_body.empty())
+	if (_status != NO_CONTENT && !_body.empty())
 		out.write(&_body[0], _body.size());
 
 	return out.str();

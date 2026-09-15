@@ -12,8 +12,9 @@ public:
 	~ConfigLocation();
 
 	void	clearMethods(void);
+	void setRedirect(int status, const std::string& target);
+	const std::pair<int, std::string>& getRedirect() const;
 
-	/* -- Setters -- */
 	void	setAutoindex(bool active);
 	void	setPath(const std::string& path);
 	void	addMethod(const std::string& method);
@@ -23,7 +24,6 @@ public:
 	void	setMethodsAssigned(void);
 	void	setAutoIndexAssigned(void);
 
-	/* -- Getters -- */
 	bool										getAutoindex(void) const;
 	const std::string&							getPath(void) const;
 	const std::string&							getUploadPath(void) const;
@@ -42,6 +42,7 @@ private:
 
 	bool								_methods_assigned;
 	bool								_autoindex_assigned;
+	std::pair<int, std::string> _redirect;
 };
 
 #endif

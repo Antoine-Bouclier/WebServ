@@ -6,16 +6,18 @@
 
 int main(int argc, char** argv)
 {
-	if (argc > 2)
+	if (argc != 2)
 	{
 		std::cerr << "Usage: ./webserv [configuration file]\n";
 		return (1);
 	}
+
 	std::signal(SIGPIPE, SIG_IGN);
+
 	try
 	{
 		ConfigParser parser;
-		parser.parseConfig(argc == 2 ? argv[1] : "config/test.conf");
+		parser.parseConfig(argv[1]);
 		check_required(parser);
 		Server server(parser.getServer());
 		server.setupServer();

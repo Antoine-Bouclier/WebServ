@@ -4,8 +4,12 @@ const char* getReasonPhrase(HttpStatusCode status)
 {
 	switch (status)
 	{
+		case FOUND: return "Found";
+		case TEMPORARY_REDIRECT: return "Temporary Redirect";
+		case PERMANENT_REDIRECT: return "Permanent Redirect";
 		case MOVED_PERMANENTLY: return "Moved Permanently";
 		case OK: return "OK";
+		case NO_CONTENT: return "No Content";
 		case NOT_FOUND: return "Not Found";
 		case FORBIDDEN: return "Forbidden";
 		case BAD_REQUEST: return "Bad Request";

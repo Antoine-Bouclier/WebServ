@@ -1,15 +1,12 @@
-#include "http/RequestHandler.hpp"
 #include <cerrno>
+#include <cstdio>
+#include "http/RequestHandler.hpp"
 
 #define MAX_AUTOINDEX_SIZE (1024 * 1024)
 
-RequestHandler::RequestHandler()
-{
-}
+RequestHandler::RequestHandler() {}
 
-RequestHandler::~RequestHandler()
-{
-}
+RequestHandler::~RequestHandler() {}
 
 static std::string escapeHtml(const std::string& text)
 {
@@ -187,9 +184,48 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 			return (response);
 		}
 	}
-	if (request.getMethod() != "GET")
-		return (buildErrorResponse(NOT_IMPLEMENTED, location, server));
+	if (location && location->getRedirect().first)
+	{
+		HttpResponse response;
+		response.setStatus(static_cast<HttpStatusCode>(location->getRedirect().first));
+		response.addHeader("Location", location->getRedirect().second);
+		return (response);
+	}
+	if (request.getMethod() == "GET")
+		return (handleGet(request, location, server));
+	if (request.getMethod() == "DELETE")
+		return (handleDelete(request, location, server));
+	if (request.getMethod() == "POST")
+    	return (handlePost(request, location, server));
+	return (buildErrorResponse(NOT_IMPLEMENTED, location, server));
+}
 
+HttpResponse RequestHandler::handleDelete(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server)
+{
+	std::string path = buildFilePath(request.getPath(), getEffectiveRoot(location, server), location ? location->getPath() : "");
+	struct stat info;
+
+	if (stat(path.c_str(), &info) != 0)
+		return (buildErrorResponse(fileError(), location, server));
+	if (!S_ISREG(info.st_mode))
+		return (buildErrorResponse(FORBIDDEN, location, server));
+
+	if (std::remove(path.c_str()) != 0)
+	{
+		HttpStatusCode status = fileError();
+
+		if (errno == EROFS)
+			status = FORBIDDEN;
+		return (buildErrorResponse(status, location, server));
+	}
+
+	HttpResponse response;
+	response.setStatus(NO_CONTENT);
+	return (response);
+}
+
+HttpResponse RequestHandler::handleGet(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server)
+{
 	std::string path = buildFilePath(request.getPath(), getEffectiveRoot(location, server), location ? location->getPath() : "");
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0)
@@ -232,6 +268,24 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 	if (!prepareFile(response, path)) return (buildErrorResponse(FORBIDDEN, location, server));
 	response.addHeader("Content-Type", getMimeType(path));
 	return (response);
+}
+
+HttpResponse RequestHandler::handlePost(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server)
+{
+    (void)request;
+
+    if (!location || location->getUploadPath().empty())
+        return (buildErrorResponse(FORBIDDEN, location, server));
+
+    const std::string& destination = location->getUploadPath();
+    struct stat info;
+
+    if (stat(destination.c_str(), &info) != 0)
+        return (buildErrorResponse(fileError(), location, server));
+    if (!S_ISDIR(info.st_mode))
+        return (buildErrorResponse(INTERNAL_SERVER_ERROR, location, server));
+
+    return (buildErrorResponse(NOT_IMPLEMENTED, location, server));
 }
 
 HttpResponse	RequestHandler::buildErrorResponse(HttpStatusCode error, const ConfigLocation* loc, const ConfigServer* server)

@@ -5,12 +5,12 @@
 #include "http/RequestValidator.hpp"
 #include "http/HttpStatusCode.hpp"
 
-#include <string>		// std::string
-#include <map>			// std::map
-#include <vector>		// std::vector
-#include <algorithm>	// std::min()
-#include <sstream>		// std::istringstream()
-#include <iostream>		// std::hex()
+#include <map>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <iostream>
+#include <algorithm>
 
 # define MAX_HEADER_SIZE 16384
 
@@ -27,7 +27,6 @@ enum HttpParseState
 class HttpRequest
 {
 	private:
-		/* -- Request Line -- */
 		std::string	_method;
 		std::string	_uri;
 		std::string	_version;
@@ -35,10 +34,8 @@ class HttpRequest
 		std::string	_path;
 		std::string	_query;
 
-		/* -- Headers -- */
 		std::map<std::string, std::string>	_headers;
 
-		/* -- Body -- */
 		std::vector<char>	_body;
 
 		/* -- Stream Control & Internal State -- */
