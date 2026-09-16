@@ -2,7 +2,6 @@
 #define HTTPREQUEST_HPP
 
 #include "config/AConfig.hpp"
-#include "http/RequestValidator.hpp"
 #include "http/HttpStatusCode.hpp"
 
 #include <map>
@@ -46,7 +45,6 @@ class HttpRequest
 		size_t				_current_chunk_size;
 		size_t				_max_body_size;
 		HttpStatusCode		_status_code;
-		bool				_has_duplicate_host;
 		bool				_is_chunked;
 		bool				_reading_chunk_headers;
 		bool				_reading_trailers;
@@ -55,15 +53,14 @@ class HttpRequest
 		void	parse();
 		void	parseRequestLine();
 		void	parseHeaders();
-		void	parseBody(size_t max_body_size);
+		void	parseBody();
 
 		/* -- Utils Function -- */
 		void	isValidURI();
 		bool	searchEOL(std::vector<char>::iterator& it);
 		bool	skipEOL();
 		void	parseBodyContentLength();
-		void	parseBodyTransferEncoding(size_t max_body_size);
-		void	resumeParsing();
+		void	parseBodyTransferEncoding();
 		void	cleanUriToPath();
 		void	decodePath();
 		bool	checkHeaderSize(size_t end);

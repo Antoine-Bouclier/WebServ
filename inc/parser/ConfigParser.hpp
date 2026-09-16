@@ -37,8 +37,8 @@ private:
 	void		handleClientMax(iter &it, iter end, AConfig &config);
 	
 	/* -- Handlers location -- */
-	void handleReturn(iter& it, iter end, AConfig& config);
-		void		handleCgi(iter &it, iter end, AConfig &config);
+	void		handleCgi(iter &it, iter end, AConfig &config);
+	void 		handleReturn(iter& it, iter end, AConfig& config);
 	void		handleMethods(iter &it, iter end, AConfig &config);
 	void		handleAutoindex(iter &it, iter end, AConfig &config);
 	void		handleUploadPath(iter &it, iter end, AConfig &config);

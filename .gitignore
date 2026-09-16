@@ -4,3 +4,5 @@ a.out
 webserv
 .vscode/
 .bin/
+www/uploads/*
+!www/uploads/.gitkeep

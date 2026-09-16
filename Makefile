@@ -30,12 +30,18 @@ SRC_DIRS	=	$(D_SRC)		\
 				$(D_SRC)http	\
 				$(D_SRC)config	\
 				$(D_SRC)parser	\
-				$(D_SRC)server
+				$(D_SRC)utils	\
+				$(D_SRC)server	\
+				$(D_SRC)http/commands	\
+				$(D_SRC)http/request
 
 vpath %.cpp $(SRC_DIRS)
 
 # file lists
 SRCS		=	main.cpp				\
+				Get.cpp					\
+				Post.cpp				\
+				Delete.cpp				\
 				Router.cpp				\
 				Lexer.cpp				\
 				Server.cpp				\
@@ -44,6 +50,10 @@ SRCS		=	main.cpp				\
 				AConfig.cpp				\
 				Listener.cpp			\
 				HttpRequest.cpp			\
+				HttpRequestHeaders.cpp	\
+				HttpRequestBody.cpp		\
+				HttpRequestUri.cpp		\
+				StringUtils.cpp			\
 				HttpResponse.cpp		\
 				HttpStatusCode.cpp		\
 				ConfigParser.cpp		\
@@ -86,15 +96,5 @@ fclean:
 re:
 	@$(MAKE) fclean
 	@$(MAKE) all
-
-valgrind:
-	@$(MAKE)
-	@clear
-	@valgrind										\
-		--leak-check=full								\
-		--show-leak-kinds=all							\
-		--track-origins=yes 							\
-		--track-fds=yes									\
-		./$(NAME)
 
 -include $(DEPS)

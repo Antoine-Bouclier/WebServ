@@ -1,3 +1,4 @@
+#include "utils/StringUtils.hpp"
 #include <algorithm>
 #include "core/Exception.hpp"
 #include "parser/ConfigParser.hpp"
@@ -116,13 +117,7 @@ void	ConfigParser::handleListen(iter &it, iter end, AConfig &config)
 	std::string	host = "0.0.0.0";
 	std::string	port_str = "8080";
 
-	size_t	found = it->value.find(':');
-	if (found != std::string::npos)
-	{
-		host = it->value.substr(0, found);
-		port_str = it->value.substr(found + 1);
-	}
-	else
+	if (!splitOnce(it->value, ':', host, port_str))
 		port_str = it->value;
 
 	++it;
