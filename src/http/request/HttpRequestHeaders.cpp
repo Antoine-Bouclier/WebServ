@@ -36,7 +36,7 @@ void	HttpRequest::parseRequestLine()
 	}
 
 	std::stringstream	ss(request_line);
-	string extra;
+	string				extra;
 	
 	ss >> _method >> _uri >> _version;
 	if (!ss || ss >> extra)

@@ -8,6 +8,20 @@
 #include <stdexcept>	// std::runtime_error
 #include <sys/socket.h>
 
+/*
+getaddrinfo = resolve a hostname or IP address
+
+hints: filters for the requested addresses
+res: linked list of matching addresses
+AF_INET: IPv4 addresses only
+SOCK_STREAM: stream sockets (TCP here)
+
+sockaddr_in: IPv4 socket address structure
+sin_addr.s_addr: IPv4 address in network byte order
+
+gai_strerror: describes a getaddrinfo error
+freeaddrinfo: releases the result list
+*/
 in_addr_t resolveHost(const std::string& host)
 {
 	struct addrinfo		hints;
@@ -27,6 +41,16 @@ in_addr_t resolveHost(const std::string& host)
 	return (addr);
 }
 
+/*
+bind = associate a socket with a local address and port
+
+sin_family: address family (AF_INET)
+sin_port: port in network byte order
+htons: converts a port from host to network byte order
+sin_addr.s_addr: local IPv4 address
+
+sockaddr*: generic address pointer expected by bind
+*/
 int	bindSocket(int fd, const std::string& host, int port)
 {
 	sockaddr_in addr;
@@ -101,5 +125,3 @@ int createSocket()
 
 	return (socket_fd);
 }
-
-

@@ -94,7 +94,7 @@ void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 			map<string, Handler>::iterator h = _handlers.find(it->value);
 
 			if (h != _handlers.end())
-				{
+			{
 				if (++it == end) throw ErrorException("Missing directive value");
 				(this->*(h->second))(it, end, config);
 			}

@@ -122,13 +122,7 @@ void Server::handleClientRead(int clientFd)
 
 	ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
 
-	if (bytes == 0)
-	{
-		closeClient(clientFd);
-		return;
-	}
-
-	if (bytes < 0)
+	if (bytes <= 0)
 	{
 		closeClient(clientFd);
 		return;
@@ -307,7 +301,6 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 
 	if (request.getState() == STATE_ERROR)
 	{
-		
 		HttpResponse	response = RequestHandler::buildErrorResponse(request.getStatusCode(), Router().matchLocation(config, request.getPath()), &config);
 
 		client.setResponse(response);
@@ -317,23 +310,21 @@ void Server::processClientRequest(int clientFd, const char* buffer, ssize_t byte
 
 	if (request.getState() == STATE_READY)
 	{
-
 		Router					router;
 		const ConfigLocation*	matchedLocation = router.matchLocation(config, request.getPath());
-
 
 		HttpResponse response = RequestHandler::handle(request, matchedLocation, &config);
 
 		client.setResponse(response);
-		
+
 		setPollEvents(clientFd, POLLOUT);
 	}
 }
 
 /***************************
- *						 *
+ *						   *
  * -- CLASS DECLARATION -- *
- *						 *
+ *						   *
  ***************************/
 
 Server::Server() : _isAlive(false) {}
