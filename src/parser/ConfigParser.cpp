@@ -1,8 +1,11 @@
-#include <fstream>			// std::ifstream - file()
-#include <sys/stat.h>		// struct stat
+#include <cerrno>
+#include <fstream>
+#include <cstring>
+#include <sys/stat.h>
 #include "core/Exception.hpp"
 #include "parser/ConfigParser.hpp"
 
+using std::map;
 using std::string;
 using std::vector;
 
@@ -59,7 +62,7 @@ string	ConfigParser::readFile(const char* path)
 	struct stat buf;
 
 	if (stat(path, &buf) == -1)
-		throw	ErrorException(_path + ": No such file or directory");
+		throw	ErrorException(_path + ": " + std::strerror(errno));
 	if (S_ISDIR(buf.st_mode)) 
 		throw	ErrorException(_path + " is a Directory");
 	if (S_ISREG(buf.st_mode))
@@ -88,10 +91,10 @@ void	ConfigParser::parseBlock(iter &it, iter end, AConfig &config)
 	{
 		if (it->type == TOKEN_WORD)
 		{
-			std::map<string, Handler>::iterator h = _handlers.find(it->value);
+			map<string, Handler>::iterator h = _handlers.find(it->value);
 
 			if (h != _handlers.end())
-				{
+			{
 				if (++it == end) throw ErrorException("Missing directive value");
 				(this->*(h->second))(it, end, config);
 			}

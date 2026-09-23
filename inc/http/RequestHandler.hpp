@@ -27,7 +27,8 @@ class RequestHandler {
 		static HttpResponse handleCgi(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server, const std::string& script_path, const std::string& cgi_bin);
 
 		static bool			isDirectory(const std::string& path);
-		static bool			isRegularFile(const std::string& path);
+		static HttpStatusCode fileError();
+		static bool prepareFile(HttpResponse& response, const std::string& path);
 		static std::string	getMimeType(const std::string& path);
 		static std::string	getEffectiveRoot(const ConfigLocation* location, const ConfigServer* server);
 		static std::string	buildFilePath(const std::string& path, const std::string& root, const std::string& prefix);

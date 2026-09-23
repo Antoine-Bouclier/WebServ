@@ -74,42 +74,6 @@ HttpStatusCode	RequestValidator::isValidheaders(const HttpRequest& request, cons
 	return (OK);
 }
 
-HttpStatusCode	RequestValidator::isValidBody(const HttpRequest& request, const AConfig& config)
-{
-	if (request.getState() == STATE_ERROR)
-		return (BAD_REQUEST);
-
-	const std::map<std::string, std::string>&			headers = request.getheaders();
-	std::map<std::string, std::string>::const_iterator	cl_it = headers.find("content-length");
-	std::map<std::string, std::string>::const_iterator	te_it = headers.find("transfer-encoding");
-
-	const std::vector<char>& body = request.getBody();
-
-	if (te_it != headers.end() && te_it->second == "chunked")
-	{
-		if (config.getClientMaxBody() > 0 && body.size() > config.getClientMaxBody())
-			return (PAYLOAD_TOO_LARGE);
-
-		return (OK);
-	}
-
-	if (cl_it != headers.end())
-	{
-		std::istringstream	iss(cl_it->second);
-		size_t				content_length = 0;
-
-		iss >> content_length;
-
-		if (config.getClientMaxBody() > 0 && body.size() > config.getClientMaxBody())
-			return (PAYLOAD_TOO_LARGE);
-
-		if (body.size() > content_length)
-			return (BAD_REQUEST);
-	}
-
-	return (OK);
-}
-
 /* -- Utils Header Methods -- */
 HttpStatusCode	RequestValidator::checkHost(const std::map<std::string, std::string>& headers)
 {

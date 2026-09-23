@@ -2,7 +2,6 @@
 #include "parser/Lexer.hpp"
 
 typedef unsigned int	uint;
-typedef unsigned long	ulong;
 
 /* -------------------- */
 /* -- CANONICAL FORM -- */
@@ -10,15 +9,12 @@ typedef unsigned long	ulong;
 
 Lexer::Lexer() {}
 
-Lexer::Lexer(const Lexer& src)
-{
-	*this = src;
-}
+Lexer::Lexer(const Lexer& other) { *this = other; }
 
-Lexer &Lexer::operator=(const Lexer& src)
+Lexer &Lexer::operator=(const Lexer& other)
 {
-	if (this != &src)
-		_tokens = src._tokens;
+	if (this != &other)
+		_tokens = other._tokens;
 	return (*this);
 }
 
@@ -60,7 +56,7 @@ std::vector<Token>	Lexer::tokenize(const std::string& config)
 
 	_tokens.clear();
 
-	for (ulong i = 0; i < config.size(); i++)
+	for (size_t i = 0; i < config.size(); i++)
 	{
 
 		if (config[i] == '\n')
@@ -90,7 +86,7 @@ std::vector<Token>	Lexer::tokenize(const std::string& config)
 			}
 		}
 		else
-			token.value.push_back(config[i]);
+			token.value += config[i];
 	}
 	addToken(token, line, TOKEN_WORD);
 	return (_tokens);
