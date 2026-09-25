@@ -13,7 +13,8 @@ HttpRequest::HttpRequest()
 		_status_code(BAD_REQUEST),
 		_is_chunked(false),
 		_reading_chunk_headers(true),
-		_reading_trailers(false){}
+		_reading_trailers(false)
+{}
 
 HttpRequest::HttpRequest(const HttpRequest& src)
 {

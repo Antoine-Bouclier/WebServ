@@ -62,7 +62,7 @@ class HttpRequest
 		void	parseBodyContentLength();
 		void	parseBodyTransferEncoding();
 		void	cleanUriToPath();
-		void	decodePath();
+		void	parsePath();
 		bool	checkHeaderSize(size_t end);
 
 	public:

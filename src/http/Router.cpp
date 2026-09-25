@@ -20,7 +20,7 @@ Router& Router::operator=(const Router& rhs)
 	return (*this);
 }
 
-const ConfigLocation* Router::matchLocation(const ConfigServer& server, const std::string& path) const
+const ConfigLocation* Router::matchLocation(const ConfigServer& server, const std::string& path)
 {
 	const ConfigLocation* best_match = NULL;
 	std::size_t max_len = 0;

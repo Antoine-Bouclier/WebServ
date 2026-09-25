@@ -3,6 +3,7 @@
 
 /* -- Includes -- */
 #include <map>
+#include "cgi/Cgi.hpp"
 #include <vector>
 #include <poll.h>
 #include <netinet/in.h>
@@ -50,7 +51,19 @@ private:
 	std::vector<Listener>		_listeners;
 
 	bool						_isAlive;
+	std::vector<Cgi*> _cgis;
 
+	bool hasCgi(int client) const;
+	void syncCgi(Cgi& cgi, int input, int output);
+	void stopCgi(int client);
+	void startCgi(int clientFd, const HttpResponse& target, const ConfigServer& config);
+	bool handleCgiEvent(int fd, short events);
+	void updateCgi();
+	void handlePollError(int error);
+	bool copyPolledFds(std::vector<pollfd>& polledFds);
+	void handleEvent(const pollfd& event);
+	bool hasPollEvent(int fd, short events) const;
+	void removePollFd(int fd);
 	void processClientRequest(int clientFd, const char* buffer, ssize_t bytes);
 };
 

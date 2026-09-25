@@ -50,7 +50,7 @@ void	HttpRequest::parseRequestLine()
 		return ;
 
 	cleanUriToPath();
-	decodePath();
+	parsePath();
 	if (_state == STATE_ERROR)
 		return;
 

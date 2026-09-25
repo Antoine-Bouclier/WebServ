@@ -3,6 +3,7 @@
 
 /* -- Includes -- */
 #include <ctime>
+#include <netinet/in.h>
 #include <fstream>
 #include "http/HttpResponse.hpp"
 
@@ -35,6 +36,8 @@ public:
 	bool				hasPendingWrite() const;
 	void				consumeWriteBuffer(size_t bytes);
 
+	void setRemoteAddress(in_addr_t address);
+	const std::string& getRemoteAddress() const;
 	void setResponse(const HttpResponse& response);
 	bool fillWriteBuffer();
 	void				touch();
@@ -49,6 +52,7 @@ private:
 	std::string	_writeBuffer;
 	std::time_t _last_activity;
 	std::time_t	_request_started;
+	std::string _remoteAddress;
 	std::ifstream _file;
 	std::string _file_path;
 	std::streamoff _file_offset;
