@@ -78,19 +78,11 @@ void	HttpRequest::parseHeaders()
 
 	string key;
 	string value;
-	if (!splitOnce(header_line, ':', key, value))
+	if (!parseHeaderLine(header_line, key, value))
 	{
 		_state = STATE_ERROR;
-		return ;
+		return;
 	}
-	if (!isToken(key)) { _state = STATE_ERROR; return; }
-	for (size_t i = 0; i < value.size(); ++i)
-	{
-		unsigned char c = value[i];
-		if ((c < 32 && c != '\t') || c == 127) { _state = STATE_ERROR; return; }
-	}
-	key = lowercase(key);
-	value = trim(value);
 
 	if ((key == "host" || key == "content-length" || key == "transfer-encoding") && _headers.count(key) > 0)
 	{

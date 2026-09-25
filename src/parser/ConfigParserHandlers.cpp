@@ -224,15 +224,10 @@ void	ConfigParser::handleClientMax(iter &it, iter end, AConfig &config)
 	if (!isNumber(value))
 		throw ErrorException("Invalid numeric value in client_max_body_size", it->line);
 
-	size_t	number = 0;
-	for (size_t i = 0; i < value.size(); i++)
-	{
-		size_t	digit = value[i] - '0';
-		if (number > (static_cast<size_t>(-1) - digit) / 10)
-			throw ErrorException("client_max_body_size doesn't fit in a size_t", it->line);
-		number = number * 10 + digit;
-	}
-	
+	size_t number;
+	if (!parseUnsignedNumber(value, number))
+		throw ErrorException("client_max_body_size doesn't fit in a size_t", it->line);
+
 	if (number > static_cast<size_t>(-1) / multiplier)
 		throw ErrorException("client_max_body_size doesn't fit in a size_t", it->line);
 

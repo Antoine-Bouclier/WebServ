@@ -22,7 +22,8 @@ bool RequestHandler::prepareFile(HttpResponse& response, const string& path)
 	if (stat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0)
 		return (false);
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file) return (false);
+	if (!file)
+		return (false);
 	response.setFile(path, info.st_size);
 	return (true);
 }
