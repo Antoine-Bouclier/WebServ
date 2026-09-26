@@ -4,6 +4,10 @@
 #include "parser/ConfigParser.hpp"
 #include "config/ConfigNormalizer.hpp"
 
+volatile std::sig_atomic_t g_stopRequested = 0;
+
+static void handleStop(int signal);
+
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -13,6 +17,8 @@ int main(int argc, char** argv)
 	}
 
 	std::signal(SIGPIPE, SIG_IGN);
+	std::signal(SIGINT, handleStop);
+	std::signal(SIGTERM, handleStop);
 
 	try
 	{
@@ -29,4 +35,10 @@ int main(int argc, char** argv)
 		return (1);
 	}
 	return (0);
+}
+
+static void handleStop(int signal)
+{
+	(void)signal;
+	g_stopRequested = 1;
 }

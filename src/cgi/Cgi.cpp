@@ -1,5 +1,6 @@
-#include <sys/wait.h>
+#include <cerrno>
 #include <stdexcept>
+#include <sys/wait.h>
 #include "cgi/Cgi.hpp"
 
 Cgi::Cgi()
@@ -56,7 +57,13 @@ Cgi::~Cgi()
 {
 	cancel(_error);
 	if (_pid > 0)
-		waitpid(_pid, &_status, WNOHANG);
+	{
+		while (waitpid(_pid, &_status, 0) < 0)
+		{
+			if (errno != EINTR)
+				break;
+		}
+	}
 }
 
 int Cgi::client() const

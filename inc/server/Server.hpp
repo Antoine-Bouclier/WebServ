@@ -3,9 +3,10 @@
 
 /* -- Includes -- */
 #include <map>
-#include "cgi/Cgi.hpp"
-#include <vector>
 #include <poll.h>
+#include <vector>
+#include <csignal>
+#include "cgi/Cgi.hpp"
 #include <netinet/in.h>
 
 #include "http/Router.hpp"
@@ -14,6 +15,8 @@
 #include "http/HttpResponse.hpp"
 #include "config/ConfigServer.hpp"
 #include "http/RequestHandler.hpp"
+
+extern volatile std::sig_atomic_t g_stopRequested;
 
 /* -- Config -- */
 #define LISTEN_BACKLOG 128

@@ -10,9 +10,11 @@ void Server::run()
 	_isAlive = true;
 	std::vector<pollfd> polledFds;
 
-	while (_isAlive)
+	while (_isAlive && !g_stopRequested)
 	{
 		int ready = poll(&_poll_fds[0], _poll_fds.size(), 1000);
+		if (g_stopRequested)
+			break;
 		if (ready < 0)
 			handlePollError(errno);
 
