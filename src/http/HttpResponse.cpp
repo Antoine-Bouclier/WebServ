@@ -9,25 +9,22 @@ using std::string;
 
 HttpResponse::HttpResponse() : _version("HTTP/1.1"), _status(OK), _file_size(0) {}
 
-HttpResponse::HttpResponse(const HttpResponse& src) : 
-	_version(src._version),
-	_status(src._status),
-	_headers(src._headers),
-	_body(src._body),
-	_file_path(src._file_path),
-	_file_size(src._file_size)
-{}
+HttpResponse::HttpResponse(const HttpResponse& src) : _version(src._version), _reason(src._reason), _status(src._status), _headers(src._headers), _body(src._body), _file_path(src._file_path), _file_size(src._file_size), _cgi_binary(src._cgi_binary), _cgi_name(src._cgi_name), _cgi_path_info(src._cgi_path_info) {}
 
 HttpResponse& HttpResponse::operator=(const HttpResponse& src)
 {
 	if (this != &src)
 	{
 		_version = src._version;
+		_reason = src._reason;
 		_status = src._status;
 		_headers = src._headers;
 		_body = src._body;
 		_file_path = src._file_path;
 		_file_size = src._file_size;
+		_cgi_binary = src._cgi_binary;
+		_cgi_name = src._cgi_name;
+		_cgi_path_info = src._cgi_path_info;
 	}
 	return (*this);
 }
@@ -45,9 +42,10 @@ const std::vector<char>&	HttpResponse::getBody() const {return (_body); }
 
 /* -- Setters -- */
 void	HttpResponse::setVersion(const string& version) { _version = version; }
-void	HttpResponse::setStatus(const HttpStatusCode& status) { _status = status; }
+void	HttpResponse::setStatus(const HttpStatusCode& status) { _status = status; _reason.clear(); }
+void HttpResponse::setReason(const string& reason) { _reason = reason; }
 void	HttpResponse::setHeaders(const map<string, string>& headers) { _headers = headers; }
-void	HttpResponse::setBody(const std::vector<char>& body) { _file_path.clear(); _file_size = 0; _body = body; }
+void	HttpResponse::setBody(const std::vector<char>& body) { _cgi_binary.clear(); _file_path.clear(); _file_size = 0; _body = body; }
 
 void	HttpResponse::addHeader(const string& key, const string& value) { _headers[key] = value; }
 
@@ -58,7 +56,7 @@ string HttpResponse::serialize() const
 	std::ostringstream out;
 	map<string, string>::const_iterator it;
 
-	out << _version << " " << _status << " " << getReasonPhrase(_status) << "\r\n";
+	out << _version << " " << _status << " " << (_reason.empty() ? getReasonPhrase(_status) : _reason) << "\r\n";
 
 	for (it = _headers.begin(); it != _headers.end(); ++it)
 	{
@@ -68,15 +66,33 @@ string HttpResponse::serialize() const
 			out << it->first << ": " << it->second << "\r\n";
 	}
 
-	if (_status != NO_CONTENT)
+	if (_status != NO_CONTENT && _status != NOT_MODIFIED)
     	out << "Content-Length: " << (_file_path.empty() ? static_cast<std::streamoff>(_body.size()) : _file_size) << "\r\n";
 	out << "Connection: close\r\n\r\n";
-	if (_status != NO_CONTENT && !_body.empty())
+	if (_status != NO_CONTENT && _status != NOT_MODIFIED && !_body.empty())
 		out.write(&_body[0], _body.size());
 
 	return out.str();
 }
 
-void HttpResponse::setFile(const string& path, std::streamoff size) { _file_path = path; _file_size = size; std::vector<char>().swap(_body); }
+void HttpResponse::setFile(const string& path, std::streamoff size)
+{
+	_cgi_binary.clear();
+	_file_path = path;
+	_file_size = size;
+	std::vector<char>().swap(_body);
+}
+
+void HttpResponse::setCgi(const string& path, const string& binary, const string& name, const string& info)
+{
+    setFile(path, 0);
+    _cgi_binary = binary;
+    _cgi_name = name;
+    _cgi_path_info = info;
+}
+
+const string& HttpResponse::getCgiName() const { return (_cgi_name); }
 const string& HttpResponse::getFilePath() const { return (_file_path); }
 std::streamoff HttpResponse::getFileSize() const { return (_file_size); }
+const string& HttpResponse::getCgiBinary() const { return (_cgi_binary); }
+const string& HttpResponse::getCgiPathInfo() const { return (_cgi_path_info); }

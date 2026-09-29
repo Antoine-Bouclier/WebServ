@@ -1,4 +1,5 @@
 #include "http/RequestValidator.hpp"
+#include "utils/StringUtils.hpp"
 
 RequestValidator::RequestValidator()
 {
@@ -88,20 +89,8 @@ HttpStatusCode	RequestValidator::checkHost(const std::map<std::string, std::stri
 
 HttpStatusCode	RequestValidator::checkContentLength(const std::string& length_str, size_t max_body_size)
 {
-	if (length_str.empty())
-		return (BAD_REQUEST);
-
-	for (size_t i = 0; i < length_str.size(); i++)
-	{
-		if (!isdigit(static_cast<unsigned char>(length_str[i])))
-			return (BAD_REQUEST);
-	}
-
-	std::istringstream	iss(length_str);
-	size_t				content_length;
-
-	iss >> content_length;
-	if (iss.fail() || !iss.eof())
+	size_t content_length;
+	if (!parseUnsignedNumber(length_str, content_length))
 		return (BAD_REQUEST);
 
 	if (max_body_size > 0 && content_length > max_body_size)

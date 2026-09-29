@@ -4,6 +4,9 @@ const char* getReasonPhrase(HttpStatusCode status)
 {
 	switch (status)
 	{
+		case NOT_MODIFIED: return "Not Modified";
+		case BAD_GATEWAY: return "Bad Gateway";
+		case GATEWAY_TIMEOUT: return "Gateway Timeout";
 		case FOUND: return "Found";
 		case TEMPORARY_REDIRECT: return "Temporary Redirect";
 		case PERMANENT_REDIRECT: return "Permanent Redirect";
@@ -23,6 +26,7 @@ const char* getReasonPhrase(HttpStatusCode status)
 		case UNSUPPORTED_MEDIA_TYPE: return "Unsupported Media Type";
 		case VERSION_NOT_SUPPORTED: return "HTTP Version Not Supported";
 
-		default: return "Internal Server Error";
+		case INTERNAL_SERVER_ERROR: return "Internal Server Error";
+		default: return "Unknown Status";
 	}
 }

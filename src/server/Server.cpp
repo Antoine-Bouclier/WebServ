@@ -72,6 +72,7 @@ void Server::handleClientConnection(int listenerFd)
 	try
 	{
 		_clients[clientFd] = Client(clientFd, listenerFd);
+		_clients[clientFd].setRemoteAddress(addr.sin_addr.s_addr);
 		if (!addPollFd(clientFd, POLLIN))
 			closeClient(clientFd);
 	}
@@ -83,18 +84,10 @@ void Server::handleClientConnection(int listenerFd)
 
 void Server::closeClient(int fd)
 {
-	close(fd);
-	_clients.erase(fd);
-
-	vector<pollfd>::iterator it = _poll_fds.begin();
-	for (; it != _poll_fds.end(); ++it)
-	{
-		if (it->fd == fd)
-		{
-			_poll_fds.erase(it);
-			break;
-		}
-	}
+    stopCgi(fd);
+    close(fd);
+    _clients.erase(fd);
+    removePollFd(fd);
 }
 
 void Server::closeTimedOutClients()
@@ -109,7 +102,7 @@ void Server::closeTimedOutClients()
         bool idleExpired = it->second.hasTimedOut(now);
         ++it;
 
-        if (requestExpired || idleExpired)
+        if (!hasCgi(fd) && (requestExpired || idleExpired))
         {
             closeClient(fd);
         }
@@ -121,7 +114,6 @@ void Server::handleClientRead(int clientFd)
 	char buffer[4096];
 
 	ssize_t bytes = recv(clientFd, buffer, sizeof(buffer), 0);
-
 	if (bytes <= 0)
 	{
 		closeClient(clientFd);
@@ -129,7 +121,6 @@ void Server::handleClientRead(int clientFd)
 	}
 
 	_clients[clientFd].touch();
-
 	processClientRequest(clientFd, buffer, bytes);
 }
 
@@ -158,63 +149,6 @@ void Server::handleClientWrite(int clientFd)
 
 	if (!client.hasPendingWrite())
 		closeClient(clientFd);
-}
-
-void	Server::run()
-{
-	if (_poll_fds.empty())
-		throw std::runtime_error("No file descriptor had been added to poll");
-
-	_isAlive = true;
-	while (_isAlive)
-	{
-		int ready = poll(&_poll_fds[0], _poll_fds.size(), 1000);
-
-		if (ready == -1)
-		{
-			if (errno == EINTR)
-			{
-				closeTimedOutClients();
-				continue;
-			}
-			throw std::runtime_error("Error while getting fds with poll");
-		}
-
-		for (int i = 0; i < static_cast<int>(_poll_fds.size()); ++i)
-		{
-			int fd = _poll_fds[i].fd;
-			short revents = _poll_fds[i].revents;
-
-			if (!revents)
-				continue;
-
-			if (isListenerFd(fd))
-			{
-				if (revents & (POLLERR | POLLHUP | POLLNVAL))
-					throw std::runtime_error("Listening socket failed");
-				if (revents & POLLIN)
-					handleClientConnection(fd);
-				continue;
-			}
-
-			try
-			{
-				if (revents & (POLLERR | POLLNVAL)) closeClient(fd);
-				else if (revents & POLLOUT) handleClientWrite(fd);
-				else if (revents & POLLIN) handleClientRead(fd);
-				else if (revents & POLLHUP) closeClient(fd);
-			}
-			catch (...)
-			{
-				closeClient(fd);
-			}
-
-			if (_clients.find(fd) == _clients.end())
-				--i;
-		}
-
-		closeTimedOutClients();
-	}
 }
 
 void	Server::setupServer()
@@ -265,6 +199,7 @@ bool Server::setPollEvents(int fd, short events)
 		if (_poll_fds[i].fd == fd)
 		{
 			_poll_fds[i].events = events;
+			_poll_fds[i].revents = 0;
 			return (true);
 		}
 	}
@@ -281,46 +216,6 @@ const ConfigServer& Server::getServerConfig(int listenerFd) const
 	throw std::runtime_error("Unknown listener fd");
 }
 
-void Server::processClientRequest(int clientFd, const char* buffer, ssize_t bytes)
-{
-	Client&				client = _clients[clientFd];
-	HttpRequest&		request = client.getRequest();
-	const ConfigServer&	config = getServerConfig(client.getListenerFd());
-
-	request.feed(buffer, bytes);
-	if (request.getState() == STATE_HEADERS_DONE)
-	{
-		Router					router;
-		const AConfig*			effectiveConfig = &config;
-		const ConfigLocation*	location = router.matchLocation(config, request.getPath());
-
-		if (location)
-			effectiveConfig = location;
-		request.startBody(*effectiveConfig);
-	}
-
-	if (request.getState() == STATE_ERROR)
-	{
-		HttpResponse	response = RequestHandler::buildErrorResponse(request.getStatusCode(), Router().matchLocation(config, request.getPath()), &config);
-
-		client.setResponse(response);
-		setPollEvents(clientFd, POLLOUT);
-		return;
-	}
-
-	if (request.getState() == STATE_READY)
-	{
-		Router					router;
-		const ConfigLocation*	matchedLocation = router.matchLocation(config, request.getPath());
-
-		HttpResponse response = RequestHandler::handle(request, matchedLocation, &config);
-
-		client.setResponse(response);
-
-		setPollEvents(clientFd, POLLOUT);
-	}
-}
-
 /***************************
  *						   *
  * -- CLASS DECLARATION -- *
@@ -333,6 +228,8 @@ Server::Server(const vector<ConfigServer>& servers) : _servers(servers), _isAliv
 
 Server::~Server()
 {
+	while (!_clients.empty()) closeClient(_clients.begin()->first);
+	for (size_t i = 0; i < _cgis.size(); ++i) delete _cgis[i];
 	for (size_t i = 0; i < _poll_fds.size(); ++i)
 	{
 		if (_poll_fds[i].fd >= 0)

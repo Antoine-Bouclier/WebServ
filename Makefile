@@ -33,12 +33,21 @@ SRC_DIRS	=	$(D_SRC)		\
 				$(D_SRC)utils	\
 				$(D_SRC)server	\
 				$(D_SRC)http/commands	\
-				$(D_SRC)http/request
+				$(D_SRC)http/request \
+				$(D_SRC)cgi
 
 vpath %.cpp $(SRC_DIRS)
 
 # file lists
-SRCS		=	main.cpp				\
+SRCS		=	Cgi.cpp \
+				CgiExecution.cpp \
+				CgiIO.cpp \
+				CgiResponse.cpp \
+				CgiResolver.cpp \
+				ServerCgi.cpp \
+				ServerLoop.cpp \
+				ServerRequest.cpp \
+				main.cpp				\
 				Get.cpp					\
 				Post.cpp				\
 				Delete.cpp				\
@@ -52,7 +61,7 @@ SRCS		=	main.cpp				\
 				HttpRequest.cpp			\
 				HttpRequestHeaders.cpp	\
 				HttpRequestBody.cpp		\
-				HttpRequestUri.cpp		\
+				HttpRequestPath.cpp		\
 				StringUtils.cpp			\
 				HttpResponse.cpp		\
 				HttpStatusCode.cpp		\

@@ -9,8 +9,10 @@ RequestHandler::~RequestHandler() {}
 
 HttpStatusCode RequestHandler::fileError()
 {
-	if (errno == ENOENT || errno == ENOTDIR) return (NOT_FOUND);
-	if (errno == EACCES || errno == EPERM || errno == ELOOP || errno == EROFS) return (FORBIDDEN);
+	if (errno == ENOENT || errno == ENOTDIR)
+		return (NOT_FOUND);
+	if (errno == EACCES || errno == EPERM || errno == ELOOP || errno == EROFS)
+		return (FORBIDDEN);
 	return (INTERNAL_SERVER_ERROR);
 }
 
@@ -20,7 +22,8 @@ bool RequestHandler::prepareFile(HttpResponse& response, const string& path)
 	if (stat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0)
 		return (false);
 	std::ifstream file(path.c_str(), std::ios::binary);
-	if (!file) return (false);
+	if (!file)
+		return (false);
 	response.setFile(path, info.st_size);
 	return (true);
 }
@@ -62,7 +65,8 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 		{
 			HttpResponse response = buildErrorResponse(METHOD_NOT_ALLOWED, location, server);
 			string allowed;
-			for (size_t i = 0; i < methods.size(); ++i) allowed += (i ? ", " : "") + methods[i];
+			for (size_t i = 0; i < methods.size(); ++i)
+				allowed += (i ? ", " : "") + methods[i];
 			response.addHeader("Allow", allowed);
 			return (response);
 		}
@@ -74,6 +78,15 @@ HttpResponse RequestHandler::handle(const HttpRequest& request, const ConfigLoca
 		response.addHeader("Location", location->getRedirect().second);
 		return (response);
 	}
+
+	HttpResponse response;
+	if (location && resolveCgi(request.getPath(), *location, response))
+	{
+		if (response.getStatus() != OK)
+			return (buildErrorResponse(response.getStatus(), location, server));
+		return (response);
+	}
+
 	if (request.getMethod() == "GET")
 		return (handleGet(request, location, server));
 	if (request.getMethod() == "DELETE")

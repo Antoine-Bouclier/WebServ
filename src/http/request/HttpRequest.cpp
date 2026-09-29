@@ -1,5 +1,6 @@
 #include "http/HttpRequest.hpp"
 #include "http/RequestValidator.hpp"
+#include "utils/StringUtils.hpp"
 
 using std::string;
 using std::vector;
@@ -13,7 +14,8 @@ HttpRequest::HttpRequest()
 		_status_code(BAD_REQUEST),
 		_is_chunked(false),
 		_reading_chunk_headers(true),
-		_reading_trailers(false){}
+		_reading_trailers(false)
+{}
 
 HttpRequest::HttpRequest(const HttpRequest& src)
 {
@@ -92,10 +94,11 @@ void HttpRequest::startBody(const AConfig& config)
 		return;
 	}
 	_max_body_size = config.getClientMaxBody();
-	if (_headers.count("content-length"))
+	if (_headers.count("content-length") && !parseUnsignedNumber(_headers["content-length"], _content_length))
 	{
-		std::istringstream length(_headers["content-length"]);
-		length >> _content_length;
+		_status_code = BAD_REQUEST;
+		_state = STATE_ERROR;
+		return;
 	}
 	_state = (_is_chunked || _headers.count("content-length")) ? STATE_BODY : STATE_READY;
 	parse();

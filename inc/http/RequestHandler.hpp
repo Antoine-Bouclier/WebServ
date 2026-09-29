@@ -25,12 +25,15 @@ class RequestHandler {
 		static HttpResponse handlePost(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server);
 		static HttpResponse handleDelete(const HttpRequest& request, const ConfigLocation* location, const ConfigServer* server);
 
-		static bool			isDirectory(const std::string& path);
+		static bool resolveCgi(const std::string& uri, const ConfigLocation& location, HttpResponse& response);
+		static std::string findCgiScriptUri(const std::string& uri, const ConfigLocation& location);
+		static std::string findCgiIndexUri(const std::string& uri, const ConfigLocation& location);
+		static HttpStatusCode validateCgiTarget(const std::string& scriptPath, const std::string& interpreter);
 		static HttpStatusCode fileError();
 		static bool prepareFile(HttpResponse& response, const std::string& path);
-		static std::string	getMimeType(const std::string& path);
 		static std::string	getEffectiveRoot(const ConfigLocation* location, const ConfigServer* server);
 		static std::string	buildFilePath(const std::string& path, const std::string& root, const std::string& prefix);
+		static HttpStatusCode findIndexFile(std::string& path, const std::vector<std::string>& indexes);
 		static HttpResponse generateAutoindex(const std::string& uri, const std::string& target_path, const ConfigLocation* location, const ConfigServer* server);
 };
 

@@ -63,6 +63,11 @@ int main()
 	string binary("a\0b\xff", 4);
 	checkSplits("GET /a%20b?q=%2F#fragment HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/a b", "q=%2F");
 	checkSplits("GET /%252e%252e HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/%2e%2e", "");
+	checkSplits("GET /./cgi-bin//echo.py?q=%2F HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/cgi-bin/echo.py", "q=%2F");
+	checkSplits("GET /%2e%2Fcgi-bin/echo.py HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/cgi-bin/echo.py", "");
+	checkSplits("GET /a/b/. HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/a/b/", "");
+	checkSplits("GET //a///b// HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/a/b/", "");
+	checkSplits("GET /./ HTTP/1.1\r\nHost: localhost\r\n\r\n", "", "/", "");
 	checkSplits(post + "Content-Length: 4\r\n\r\n" + binary, binary, "/upload", "");
 	checkSplits(post + "Content-Length: 0\r\n\r\n", "", "/upload", "");
 	checkSplits(chunked + "1\r\na\r\n3\r\n" + binary.substr(1) + "\r\n0\r\n\r\n", binary, "/upload", "");

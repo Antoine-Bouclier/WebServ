@@ -1,34 +1,15 @@
 #include "server/Client.hpp"
+#include <sstream>
 
 using std::string;
 
-Client::Client() :
-	_fd(-1),
-	_listener_fd(-1),
-	_last_activity(std::time(NULL)),
-	_request_started(_last_activity),
-	_file_offset(0),
-	_file_remaining(0)
+Client::Client() : _fd(-1), _listener_fd(-1), _last_activity(std::time(NULL)), _request_started(_last_activity), _file_offset(0), _file_remaining(0)
 {}
 
-Client::Client(int clientFd, int listenerFd) :
-	_fd(clientFd),
-	_listener_fd(listenerFd),
-	_last_activity(std::time(NULL)),
-	_request_started(_last_activity),
-	_file_offset(0),
-	_file_remaining(0)
+Client::Client(int clientFd, int listenerFd) : _fd(clientFd), _listener_fd(listenerFd), _last_activity(std::time(NULL)), _request_started(_last_activity), _file_offset(0), _file_remaining(0)
 {}
 
-Client::Client(const Client& other) :
-	_fd(other._fd),
-	_request(other._request),
-	_listener_fd(other._listener_fd),
-	_writeBuffer(other._writeBuffer),
-	_last_activity(other._last_activity),
-	_request_started(other._request_started),
-	_file_offset(0),
-	_file_remaining(0)
+Client::Client(const Client& other) : _fd(other._fd), _request(other._request), _listener_fd(other._listener_fd), _writeBuffer(other._writeBuffer), _last_activity(other._last_activity), _request_started(other._request_started), _file_offset(0), _file_remaining(0)
 {
 	*this = other;
 }
@@ -45,6 +26,7 @@ Client&	Client::operator=(const Client& other)
 		_writeBuffer = other._writeBuffer;
 		_last_activity = other._last_activity;
 		_request_started = other._request_started;
+		_remoteAddress = other._remoteAddress;
 		_file.close();
 		_file.clear();
 		_file_path = other._file_path;
@@ -113,3 +95,13 @@ bool Client::fillWriteBuffer()
 	_file_remaining -= count;
 	return (true);
 }
+
+void Client::setRemoteAddress(in_addr_t address)
+{
+    unsigned long host = ntohl(address);
+    std::ostringstream text;
+    text << ((host >> 24) & 255) << '.' << ((host >> 16) & 255) << '.' << ((host >> 8) & 255) << '.' << (host & 255);
+    _remoteAddress = text.str();
+}
+
+const string& Client::getRemoteAddress() const { return (_remoteAddress); }

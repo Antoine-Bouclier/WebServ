@@ -1,5 +1,6 @@
 #include "utils/StringUtils.hpp"
 #include <cctype>
+#include <sstream>
 
 bool splitOnce(const std::string& text, char separator, std::string& left, std::string& right)
 {
@@ -42,7 +43,43 @@ bool isToken(const std::string& value)
 	for (size_t i = 0; i < value.size(); ++i)
 	{
 		unsigned char c = value[i];
-		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || std::string("!#$%&'*+-.^_`|~").find(c) != std::string::npos)) return (false);
+		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || std::string("!#$%&'*+-.^_`|~").find(c) != std::string::npos))
+			return (false);
 	}
+	return (true);
+}
+
+bool isValidHeaderValue(const std::string& value)
+{
+	for (size_t i = 0; i < value.size(); ++i)
+	{
+		unsigned char c = value[i];
+		if ((c < 32 && c != '\t') || c == 127)
+			return (false);
+	}
+	return (true);
+}
+
+bool parseHeaderLine(const std::string& line, std::string& name, std::string& value)
+{
+	if (!splitOnce(line, ':', name, value) || !isToken(name) || !isValidHeaderValue(value))
+		return (false);
+	name = lowercase(name);
+	value = trim(value);
+	return (true);
+}
+
+bool parseUnsignedNumber(const std::string& text, std::size_t& value)
+{
+	if (text.empty() || text.find_first_not_of("0123456789") != std::string::npos)
+		return (false);
+
+	std::istringstream input(text);
+	std::size_t number;
+	input >> number;
+	if (input.fail() || !input.eof())
+		return (false);
+
+	value = number;
 	return (true);
 }
