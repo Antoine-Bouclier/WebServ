@@ -51,6 +51,24 @@ Clone the repository and run `make` at the root of the project to compile the bi
 git clone <your-repo-url> webserv
 cd webserv
 make
+=======
+
+---
+
+## Instructions
+
+### Prerequisites
+* A C++ compiler supporting the **C++98** standard (`c++` / `g++` / `clang++`).
+* POSIX-compliant operating system (Linux / macOS).
+* Optional: `php-cgi` or `python3` installed on the host machine to test CGI execution.
+
+### Compilation
+Clone the repository and run `make` at the root of the project to compile the binary:
+
+```bash
+git clone <your-repo-url> webserv
+cd webserv
+make
 ```
 
 Standard Makefile rules are available:
